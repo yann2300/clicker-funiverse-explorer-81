@@ -1,6 +1,5 @@
-
 import { useState, useEffect, useCallback } from 'react';
-import { toast } from "@/components/ui/sonner";
+import { toast } from "@/hooks/use-toast"; // Changed from @/components/ui/sonner to the correct path
 
 // Define types for our game state
 export interface Upgrade {
