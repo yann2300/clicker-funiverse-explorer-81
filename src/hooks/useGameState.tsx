@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from 'react';
 import { toast } from "@/hooks/use-toast"; // Changed from @/components/ui/sonner to the correct path
 
@@ -192,8 +193,11 @@ export const useGameState = () => {
         newPointsPerSecond += upgrade.baseValue;
       }
       
-      // Show toast for upgrade purchase
-      toast.success(`Upgraded ${upgrade.name} to level ${upgrade.currentLevel + 1}`);
+      // Show toast for upgrade purchase - Fixed toast implementation
+      toast({
+        title: "Upgrade Purchased",
+        description: `Upgraded ${upgrade.name} to level ${upgrade.currentLevel + 1}`
+      });
       
       return {
         ...prev,
@@ -254,7 +258,11 @@ export const useGameState = () => {
   const resetGame = useCallback(() => {
     localStorage.removeItem('clickerGameState');
     setGameState({ ...initialGameState });
-    toast.success("Game reset successfully");
+    // Fixed toast implementation
+    toast({
+      title: "Game Reset",
+      description: "Game has been reset successfully"
+    });
   }, []);
   
   return {
