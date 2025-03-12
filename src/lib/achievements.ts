@@ -15,7 +15,7 @@ export const achievements: Achievement[] = [
     description: 'Begin your clicking journey',
     unlockMessage: 'Click the main button once',
     isUnlocked: false,
-    icon: 'mouse-pointer'
+    icon: 'MousePointer'
   },
   {
     id: 'click-master',
@@ -23,7 +23,7 @@ export const achievements: Achievement[] = [
     description: 'Become proficient at clicking',
     unlockMessage: 'Reach 100 total clicks',
     isUnlocked: false,
-    icon: 'mouse-pointer-click'
+    icon: 'MousePointerClick'
   },
   {
     id: 'points-collector',
@@ -31,7 +31,7 @@ export const achievements: Achievement[] = [
     description: 'Amass a small fortune',
     unlockMessage: 'Reach 1,000 total points',
     isUnlocked: false,
-    icon: 'coins'
+    icon: 'Coins'
   },
   {
     id: 'upgrade-novice',
@@ -39,7 +39,7 @@ export const achievements: Achievement[] = [
     description: 'Start improving your setup',
     unlockMessage: 'Purchase your first upgrade',
     isUnlocked: false,
-    icon: 'arrow-up-circle'
+    icon: 'ArrowUpCircle'
   },
   {
     id: 'automation-beginner',
@@ -47,6 +47,6 @@ export const achievements: Achievement[] = [
     description: 'Begin your automation journey',
     unlockMessage: 'Purchase your first passive upgrade',
     isUnlocked: false,
-    icon: 'settings'
+    icon: 'Settings'
   }
 ];

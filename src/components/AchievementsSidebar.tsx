@@ -1,8 +1,7 @@
 
 import React from 'react';
-import { Sidebar, SidebarContent, SidebarHeader } from "@/components/ui/sidebar";
-import { Button } from "@/components/ui/button";
 import { X } from 'lucide-react';
+import { Button } from "@/components/ui/button";
 import { Achievement } from '@/lib/achievements';
 import * as LucideIcons from 'lucide-react';
 
@@ -16,14 +15,14 @@ const AchievementsSidebar = ({ achievements, isOpen, onClose }: AchievementsSide
   if (!isOpen) return null;
 
   return (
-    <Sidebar className="fixed right-0 top-0 h-full w-80 z-50">
-      <SidebarHeader className="p-4 border-b flex items-center justify-between">
+    <div className="fixed right-0 top-0 h-full w-80 z-50 bg-white shadow-lg border-l border-gray-200 flex flex-col">
+      <div className="p-4 border-b flex items-center justify-between">
         <h2 className="text-lg font-semibold">Achievements</h2>
         <Button variant="ghost" size="icon" onClick={onClose}>
           <X className="h-4 w-4" />
         </Button>
-      </SidebarHeader>
-      <SidebarContent className="p-4">
+      </div>
+      <div className="p-4 overflow-auto flex-grow">
         <div className="space-y-4">
           {achievements.map((achievement) => {
             const IconComponent = (LucideIcons as any)[achievement.icon] || LucideIcons.Award;
@@ -49,8 +48,8 @@ const AchievementsSidebar = ({ achievements, isOpen, onClose }: AchievementsSide
             );
           })}
         </div>
-      </SidebarContent>
-    </Sidebar>
+      </div>
+    </div>
   );
 };
 

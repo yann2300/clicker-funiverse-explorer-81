@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from 'react';
 import ClickerButton from './ClickerButton';
 import UpgradeShop from './UpgradeShop';
@@ -31,6 +32,7 @@ const GameContainer = () => {
       if (achievement) {
         achievement.isUnlocked = true;
         changed = true;
+        showAchievementToast(achievement);
       }
     }
 
@@ -40,6 +42,7 @@ const GameContainer = () => {
       if (achievement) {
         achievement.isUnlocked = true;
         changed = true;
+        showAchievementToast(achievement);
       }
     }
 
@@ -49,6 +52,7 @@ const GameContainer = () => {
       if (achievement) {
         achievement.isUnlocked = true;
         changed = true;
+        showAchievementToast(achievement);
       }
     }
 
@@ -58,6 +62,7 @@ const GameContainer = () => {
       if (achievement) {
         achievement.isUnlocked = true;
         changed = true;
+        showAchievementToast(achievement);
       }
     }
 
@@ -67,25 +72,21 @@ const GameContainer = () => {
       if (achievement) {
         achievement.isUnlocked = true;
         changed = true;
+        showAchievementToast(achievement);
       }
     }
 
     if (changed) {
       setLocalAchievements(newAchievements);
-      // Find the newly unlocked achievements and show notifications
-      const newlyUnlocked = newAchievements.filter(
-        (achievement, index) => 
-          achievement.isUnlocked && !localAchievements[index].isUnlocked
-      );
-      
-      newlyUnlocked.forEach(achievement => {
-        toast({
-          title: `Achievement Unlocked: ${achievement.title}`,
-          description: `${achievement.description}\nHow to unlock: ${achievement.unlockMessage}`,
-        });
-      });
     }
   }, [gameState, localAchievements]);
+  
+  const showAchievementToast = (achievement: typeof localAchievements[0]) => {
+    toast({
+      title: `Achievement Unlocked: ${achievement.title}`,
+      description: `${achievement.description}\nHow to unlock: ${achievement.unlockMessage}`,
+    });
+  };
   
   if (!mounted) {
     return null;
