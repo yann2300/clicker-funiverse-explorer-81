@@ -12,7 +12,7 @@ import { achievements } from '@/lib/achievements';
 import { toast } from "@/hooks/use-toast";
 
 const GameContainer = () => {
-  const { gameState, handleClick, purchaseUpgrade, calculateUpgradeCost, resetGame } = useGameState();
+  const { gameState, handleClick, purchaseUpgrade, purchasePet, calculateUpgradeCost, resetGame, getSurgeTime } = useGameState();
   const [mounted, setMounted] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [localAchievements, setLocalAchievements] = useState(achievements);
@@ -145,9 +145,12 @@ const GameContainer = () => {
     // Hide bonus
     setShowBonus(false);
     
+    // Get surge time including pet bonuses
+    const surgeTime = getSurgeTime();
+    
     // Activate SURGE MODE
     setSurgeMode(true);
-    setSurgeModeTimeLeft(10);
+    setSurgeModeTimeLeft(surgeTime);
     
     // Clear previous timeout if exists
     if (surgeModeTimeoutRef.current) {
@@ -157,17 +160,30 @@ const GameContainer = () => {
     // Set timeout to end SURGE MODE
     surgeModeTimeoutRef.current = setTimeout(() => {
       setSurgeMode(false);
-    }, 10000);
+    }, surgeTime * 1000);
     
     // Show toast
     toast({
       title: "SURGE MODE ACTIVATED!",
-      description: "2x points for 10 seconds!",
+      description: `2x points for ${surgeTime} seconds!`,
     });
   };
   
   // Customized click handler for SURGE MODE
   const handleGameClick = () => {
+    // Check if we have a chance to trigger SURGE MODE from pets
+    const petBonuses = gameState.pets.filter(p => p.owned && p.bonusType === 'surgeModeChance');
+    let triggerChance = 0;
+    
+    petBonuses.forEach(pet => {
+      triggerChance += pet.bonusValue;
+    });
+    
+    // If not in SURGE MODE and we roll a success, activate SURGE MODE
+    if (!surgeMode && Math.random() < triggerChance) {
+      handleBonusClick(); // Reuse the same function
+    }
+    
     // If in SURGE MODE, double points
     handleClick(surgeMode ? 2 : 1);
   };
@@ -281,6 +297,10 @@ const GameContainer = () => {
     };
   };
   
+  if (!mounted) {
+    return null;
+  }
+  
   return (
     <div className="container max-w-5xl mx-auto px-4 py-6 relative overflow-hidden">
       {/* Bonus mole */}
@@ -364,6 +384,7 @@ const GameContainer = () => {
           <UpgradeShop 
             gameState={gameState}
             onPurchase={purchaseUpgrade}
+            onPetPurchase={purchasePet}
             calculateUpgradeCost={calculateUpgradeCost}
           />
         </div>

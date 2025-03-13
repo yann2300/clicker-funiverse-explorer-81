@@ -1,30 +1,9 @@
 
 import { useState, useEffect, useCallback } from 'react';
-import { toast } from "@/hooks/use-toast"; // Changed from @/components/ui/sonner to the correct path
-
-// Define types for our game state
-export interface Upgrade {
-  id: string;
-  name: string;
-  description: string;
-  baseCost: number;
-  currentLevel: number;
-  maxLevel: number;
-  baseValue: number;
-  type: 'click' | 'passive';
-  unlockPoints?: number;
-  icon: string;
-}
-
-export interface GameState {
-  points: number;
-  pointsPerClick: number;
-  pointsPerSecond: number;
-  totalClicks: number;
-  totalPoints: number;
-  upgrades: Upgrade[];
-  lastSaved: Date;
-}
+import { toast } from "@/hooks/use-toast";
+import { GameState, Upgrade, Pet } from '@/types/gameState';
+import usePetsSystem, { initialPets } from './usePetsSystem';
+import useUpgradesSystem, { initialUpgrades } from './useUpgradesSystem';
 
 // Initial game state
 const initialGameState: GameState = {
@@ -33,84 +12,18 @@ const initialGameState: GameState = {
   pointsPerSecond: 0,
   totalClicks: 0,
   totalPoints: 0,
-  upgrades: [
-    {
-      id: 'better-click',
-      name: 'Better Click',
-      description: 'Increase points per click',
-      baseCost: 10,
-      currentLevel: 0,
-      maxLevel: 100,
-      baseValue: 1,
-      type: 'click',
-      icon: 'mouse-pointer',
-    },
-    {
-      id: 'auto-clicker',
-      name: 'Auto Clicker',
-      description: 'Automatically generates points',
-      baseCost: 50,
-      currentLevel: 0,
-      maxLevel: 100,
-      baseValue: 1,
-      type: 'passive',
-      unlockPoints: 30,
-      icon: 'timer',
-    },
-    {
-      id: 'efficiency',
-      name: 'Efficiency',
-      description: 'All clicks are 50% more effective',
-      baseCost: 200,
-      currentLevel: 0,
-      maxLevel: 10,
-      baseValue: 0.5,
-      type: 'click',
-      unlockPoints: 150,
-      icon: 'zap',
-    },
-    {
-      id: 'automatic-system',
-      name: 'Automatic System',
-      description: 'More sophisticated auto-generation',
-      baseCost: 500,
-      currentLevel: 0,
-      maxLevel: 50,
-      baseValue: 5,
-      type: 'passive',
-      unlockPoints: 400,
-      icon: 'cpu',
-    },
-    {
-      id: 'innovation',
-      name: 'Innovation',
-      description: 'Revolutionary clicking technology',
-      baseCost: 2000,
-      currentLevel: 0,
-      maxLevel: 25,
-      baseValue: 10,
-      type: 'click',
-      unlockPoints: 1500,
-      icon: 'lightbulb',
-    },
-    {
-      id: 'factory',
-      name: 'Factory',
-      description: 'Mass production of points',
-      baseCost: 5000,
-      currentLevel: 0,
-      maxLevel: 25,
-      baseValue: 25,
-      type: 'passive',
-      unlockPoints: 3000,
-      icon: 'factory',
-    }
-  ],
+  upgrades: initialUpgrades,
+  pets: initialPets,
   lastSaved: new Date(),
+  surgeTimeBonus: 0,
+  pointsMultiplier: 1.0
 };
 
 // Hook to manage game state
 export const useGameState = () => {
+  const { updateUnlockedPets, calculatePetBonuses } = usePetsSystem();
+  const { calculateNewClickValue } = useUpgradesSystem();
+  
   // Load state from localStorage
   const loadState = (): GameState => {
     const savedState = localStorage.getItem('clickerGameState');
@@ -118,6 +31,20 @@ export const useGameState = () => {
       try {
         const parsed = JSON.parse(savedState);
         parsed.lastSaved = new Date(parsed.lastSaved);
+        
+        // Ensure pets array exists (for backward compatibility)
+        if (!parsed.pets) {
+          parsed.pets = initialPets;
+        }
+        
+        // Ensure new properties exist
+        if (parsed.surgeTimeBonus === undefined) {
+          parsed.surgeTimeBonus = 0;
+        }
+        if (parsed.pointsMultiplier === undefined) {
+          parsed.pointsMultiplier = 1.0;
+        }
+        
         return parsed;
       } catch (error) {
         console.error('Failed to parse saved game state:', error);
@@ -145,13 +72,32 @@ export const useGameState = () => {
   
   // Handle clicking the main button, with an optional multiplier for SURGE MODE
   const handleClick = useCallback((multiplier = 1) => {
-    setGameState(prev => ({
-      ...prev,
-      points: prev.points + (prev.pointsPerClick * multiplier),
-      totalPoints: prev.totalPoints + (prev.pointsPerClick * multiplier),
-      totalClicks: prev.totalClicks + 1,
-    }));
-  }, []);
+    setGameState(prev => {
+      // Calculate bonuses from pets
+      const petBonuses = calculatePetBonuses(prev.pets);
+      
+      // Apply click value boost and points multiplier from pets
+      const clickBoost = 1 + petBonuses.clickValueBoost;
+      const totalMultiplier = prev.pointsMultiplier * multiplier * clickBoost;
+      
+      // Check for random SURGE MODE activation from pet bonus
+      let surgeTrigger = false;
+      if (petBonuses.surgeModeChance > 0) {
+        surgeTrigger = Math.random() < petBonuses.surgeModeChance;
+      }
+      
+      // If pet triggered SURGE MODE, we'll handle it in the component
+      
+      return {
+        ...prev,
+        points: prev.points + (prev.pointsPerClick * totalMultiplier),
+        totalPoints: prev.totalPoints + (prev.pointsPerClick * totalMultiplier),
+        totalClicks: prev.totalClicks + 1,
+        // Return surge trigger status in case we need it
+        surgeTrigger: surgeTrigger
+      };
+    });
+  }, [calculatePetBonuses]);
   
   // Purchase an upgrade
   const purchaseUpgrade = useCallback((upgradeId: string) => {
@@ -193,7 +139,13 @@ export const useGameState = () => {
         newPointsPerSecond += upgrade.baseValue;
       }
       
-      // Show toast for upgrade purchase - Fixed toast implementation
+      // Update unlocked pets based on new upgrade levels
+      const updatedPets = updateUnlockedPets({
+        ...prev,
+        upgrades: newUpgrades
+      });
+      
+      // Show toast for upgrade purchase
       toast({
         title: "Upgrade Purchased",
         description: `Upgraded ${upgrade.name} to level ${upgrade.currentLevel + 1}`
@@ -205,42 +157,69 @@ export const useGameState = () => {
         pointsPerClick: newPointsPerClick,
         pointsPerSecond: newPointsPerSecond,
         upgrades: newUpgrades,
+        pets: updatedPets
       };
     });
-  }, [calculateUpgradeCost]);
+  }, [calculateUpgradeCost, updateUnlockedPets, calculateNewClickValue]);
   
-  // Calculate click value based on upgrades
-  const calculateNewClickValue = useCallback((baseValue: number, upgrades: Upgrade[]): number => {
-    let multiplier = 1;
-    
-    // Find the efficiency upgrade
-    const efficiencyUpgrade = upgrades.find(u => u.id === 'efficiency');
-    if (efficiencyUpgrade && efficiencyUpgrade.currentLevel > 0) {
-      // Each level adds 50% to the multiplier
-      multiplier += efficiencyUpgrade.baseValue * efficiencyUpgrade.currentLevel;
-    }
-    
-    // Calculate base click power from direct click upgrades
-    let baseClick = 1; // Start with 1 as the minimum
-    upgrades.forEach(upgrade => {
-      if (upgrade.type === 'click' && upgrade.id !== 'efficiency') {
-        baseClick += upgrade.baseValue * upgrade.currentLevel;
+  // Purchase a pet
+  const purchasePet = useCallback((petId: string) => {
+    setGameState(prev => {
+      const petIndex = prev.pets.findIndex(p => p.id === petId);
+      
+      if (petIndex === -1) return prev;
+      
+      const pet = prev.pets[petIndex];
+      
+      // Check if the pet is unlocked, not already owned, and affordable
+      if (!pet.unlocked || pet.owned || prev.points < pet.cost) {
+        return prev;
       }
+      
+      // Create a copy of the pets array
+      const newPets = [...prev.pets];
+      
+      // Mark the pet as owned
+      newPets[petIndex] = {
+        ...pet,
+        owned: true
+      };
+      
+      // Recalculate bonuses from pets
+      const petBonuses = calculatePetBonuses(newPets);
+      
+      // Show toast for pet purchase
+      toast({
+        title: "Pet Adopted!",
+        description: `${pet.name} has joined your team!`
+      });
+      
+      return {
+        ...prev,
+        points: prev.points - pet.cost,
+        pets: newPets,
+        pointsMultiplier: petBonuses.pointsMultiplier,
+        surgeTimeBonus: petBonuses.surgeTimeBonus
+      };
     });
-    
-    return baseClick * multiplier;
-  }, []);
+  }, [calculatePetBonuses]);
   
-  // Passive income generation
+  // Passive income generation with pet bonuses
   useEffect(() => {
     const timer = setInterval(() => {
       if (gameState.pointsPerSecond > 0) {
-        addPoints(gameState.pointsPerSecond / 10); // Divide by 10 because we update 10 times per second
+        // Calculate bonuses from pets
+        const petBonuses = calculatePetBonuses(gameState.pets);
+        const passiveBoost = 1 + petBonuses.passiveBoost;
+        
+        // Apply bonuses to passive income
+        const totalPassiveIncome = gameState.pointsPerSecond * gameState.pointsMultiplier * passiveBoost;
+        addPoints(totalPassiveIncome / 10); // Divide by 10 because we update 10 times per second
       }
     }, 100);
     
     return () => clearInterval(timer);
-  }, [gameState.pointsPerSecond, addPoints]);
+  }, [gameState.pointsPerSecond, gameState.pointsMultiplier, gameState.pets, addPoints, calculatePetBonuses]);
   
   // Auto-save game state every 10 seconds
   useEffect(() => {
@@ -258,19 +237,25 @@ export const useGameState = () => {
   const resetGame = useCallback(() => {
     localStorage.removeItem('clickerGameState');
     setGameState({ ...initialGameState });
-    // Fixed toast implementation
     toast({
       title: "Game Reset",
       description: "Game has been reset successfully"
     });
   }, []);
   
+  // Get surge time including pet bonuses
+  const getSurgeTime = useCallback(() => {
+    return 10 + gameState.surgeTimeBonus; // Base 10 seconds + pet bonuses
+  }, [gameState.surgeTimeBonus]);
+  
   return {
     gameState,
     handleClick,
     purchaseUpgrade,
+    purchasePet,
     calculateUpgradeCost,
     resetGame,
+    getSurgeTime,
   };
 };
 
