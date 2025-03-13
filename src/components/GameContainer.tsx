@@ -32,19 +32,30 @@ const GameContainer = () => {
     setMounted(true);
   }, []);
 
-  // Check for bonus appearance
+  // Check for bonus appearance every 90 seconds
   useEffect(() => {
-    if (gameState.totalClicks >= 10 && !showBonus && !surgeMode) {
-      // Random chance to show bonus (1 in 10 chance every second)
-      const bonusCheck = setInterval(() => {
-        if (Math.random() < 0.1 && !showBonus && !surgeMode) {
+    if (mounted && !surgeMode) {
+      // Initial delay before first appearance (random between 5-15 seconds)
+      const initialDelay = Math.random() * 10000 + 5000;
+      
+      const initialTimer = setTimeout(() => {
+        if (!showBonus && !surgeMode) {
           showBonusMole();
         }
-      }, 1000);
+        
+        // Set up the 90-second interval after the initial appearance
+        const bonusInterval = setInterval(() => {
+          if (!showBonus && !surgeMode) {
+            showBonusMole();
+          }
+        }, 90000); // 90 seconds
+        
+        return () => clearInterval(bonusInterval);
+      }, initialDelay);
       
-      return () => clearInterval(bonusCheck);
+      return () => clearTimeout(initialTimer);
     }
-  }, [gameState.totalClicks, showBonus, surgeMode]);
+  }, [mounted, surgeMode]);
   
   // Handle SURGE MODE timer
   useEffect(() => {
