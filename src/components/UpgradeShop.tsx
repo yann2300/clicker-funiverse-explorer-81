@@ -16,7 +16,8 @@ import {
   Dog,
   Bird,
   Fish,
-  Sparkle
+  Sparkle,
+  Circle
 } from 'lucide-react';
 
 interface UpgradeShopProps {
@@ -69,6 +70,20 @@ const UpgradeShop = ({ gameState, onPurchase, onPetPurchase, calculateUpgradeCos
   
   // Check if pets tab is available (at least 5 total upgrade levels)
   const petsTabAvailable = totalUpgradeLevel >= 5;
+  
+  // Check for available upgrades (ones we can afford and aren't maxed)
+  const hasAvailableClickUpgrades = clickUpgrades.some(u => 
+    gameState.points >= calculateUpgradeCost(u) && u.currentLevel < u.maxLevel
+  );
+  
+  const hasAvailablePassiveUpgrades = passiveUpgrades.some(u => 
+    gameState.points >= calculateUpgradeCost(u) && u.currentLevel < u.maxLevel
+  );
+  
+  // Check for available pets (unlocked, not owned, and affordable)
+  const hasAvailablePets = availablePets.some(p => 
+    !p.owned && gameState.points >= p.cost
+  );
   
   // Handle upgrade purchase
   const handlePurchase = (upgradeId: string) => {
@@ -328,13 +343,23 @@ const UpgradeShop = ({ gameState, onPurchase, onPetPurchase, calculateUpgradeCos
       
       <Tabs defaultValue="click" className="w-full">
         <TabsList className={`grid ${petsTabAvailable ? 'grid-cols-3' : 'grid-cols-2'} mb-4`}>
-          <TabsTrigger value="click">Click Upgrades</TabsTrigger>
-          <TabsTrigger value="passive">Passive Upgrades</TabsTrigger>
+          <TabsTrigger value="click" className="relative">
+            Click Upgrades
+            {hasAvailableClickUpgrades && (
+              <span className="absolute -top-1 -right-1 w-2 h-2 bg-game-accent rounded-full animate-pulse"></span>
+            )}
+          </TabsTrigger>
+          <TabsTrigger value="passive" className="relative">
+            Passive Upgrades
+            {hasAvailablePassiveUpgrades && (
+              <span className="absolute -top-1 -right-1 w-2 h-2 bg-amber-500 rounded-full animate-pulse"></span>
+            )}
+          </TabsTrigger>
           {petsTabAvailable && (
             <TabsTrigger value="pets" className="relative">
               Pets
-              {availablePets.some(p => !p.owned) && (
-                <span className="absolute -top-1 -right-1 w-2 h-2 bg-purple-500 rounded-full"></span>
+              {hasAvailablePets && (
+                <span className="absolute -top-1 -right-1 w-2 h-2 bg-purple-500 rounded-full animate-pulse"></span>
               )}
             </TabsTrigger>
           )}

@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { toast } from "@/hooks/use-toast";
 import { GameState, Upgrade, Pet } from '@/types/gameState';
@@ -124,26 +123,24 @@ export const useGameState = () => {
       };
       
       // Calculate new points per click and per second
-      let newPointsPerClick = prev.pointsPerClick;
-      let newPointsPerSecond = prev.pointsPerSecond;
+      let newPointsPerClick = calculateNewClickValue(1, newUpgrades);
+      let newPointsPerSecond = 0;
       
-      if (upgrade.type === 'click') {
-        if (upgrade.id === 'efficiency') {
-          // Efficiency upgrade increases all clicks by a percentage
-          newPointsPerClick = calculateNewClickValue(prev.pointsPerClick, prev.upgrades);
-        } else {
-          // Regular click upgrade
-          newPointsPerClick += upgrade.baseValue;
+      // Calculate passive points generation
+      newUpgrades.forEach(upgrade => {
+        if (upgrade.type === 'passive') {
+          newPointsPerSecond += upgrade.baseValue * upgrade.currentLevel;
         }
-      } else if (upgrade.type === 'passive') {
-        newPointsPerSecond += upgrade.baseValue;
-      }
+      });
       
       // Update unlocked pets based on new upgrade levels
       const updatedPets = updateUnlockedPets({
         ...prev,
         upgrades: newUpgrades
       });
+      
+      // Recalculate pet bonuses after buying the upgrade
+      const petBonuses = calculatePetBonuses(updatedPets);
       
       // Show toast for upgrade purchase
       toast({
@@ -156,11 +153,13 @@ export const useGameState = () => {
         points: prev.points - cost,
         pointsPerClick: newPointsPerClick,
         pointsPerSecond: newPointsPerSecond,
+        pointsMultiplier: petBonuses.pointsMultiplier,
+        surgeTimeBonus: petBonuses.surgeTimeBonus,
         upgrades: newUpgrades,
         pets: updatedPets
       };
     });
-  }, [calculateUpgradeCost, updateUnlockedPets, calculateNewClickValue]);
+  }, [calculateUpgradeCost, updateUnlockedPets, calculateNewClickValue, calculatePetBonuses]);
   
   // Purchase a pet
   const purchasePet = useCallback((petId: string) => {
@@ -188,6 +187,9 @@ export const useGameState = () => {
       // Recalculate bonuses from pets
       const petBonuses = calculatePetBonuses(newPets);
       
+      // Fix: Recalculate pointsPerClick with pet bonuses
+      const newPointsPerClick = calculateNewClickValue(1, prev.upgrades);
+      
       // Show toast for pet purchase
       toast({
         title: "Pet Adopted!",
@@ -198,11 +200,12 @@ export const useGameState = () => {
         ...prev,
         points: prev.points - pet.cost,
         pets: newPets,
+        pointsPerClick: newPointsPerClick,
         pointsMultiplier: petBonuses.pointsMultiplier,
         surgeTimeBonus: petBonuses.surgeTimeBonus
       };
     });
-  }, [calculatePetBonuses]);
+  }, [calculatePetBonuses, calculateNewClickValue]);
   
   // Passive income generation with pet bonuses
   useEffect(() => {
