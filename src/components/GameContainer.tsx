@@ -1,4 +1,3 @@
-
 import { useEffect, useState, useRef } from 'react';
 import ClickerButton from './ClickerButton';
 import UpgradeShop from './UpgradeShop';
@@ -6,7 +5,7 @@ import Stats from './Stats';
 import useGameState from '@/hooks/useGameState';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
-import { RefreshCw, Trophy, Zap } from 'lucide-react';
+import { RefreshCw, Trophy, Zap, Save } from 'lucide-react';
 import AchievementsSidebar from './AchievementsSidebar';
 import { achievements } from '@/lib/achievements';
 import { toast } from "@/hooks/use-toast";
@@ -27,6 +26,12 @@ const GameContainer = () => {
   const [showBonus, setShowBonus] = useState(false);
   const [bonusPosition, setBonusPosition] = useState({ x: 0, y: 0, corner: 0, entering: true });
   const bonusTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  
+  // Track SURGE MODE activations
+  const [surgeModeActivations, setSurgeModeActivations] = useState(0);
+  
+  // Last save indicator
+  const [lastSaved, setLastSaved] = useState<Date | null>(null);
   
   useEffect(() => {
     setMounted(true);
@@ -152,6 +157,9 @@ const GameContainer = () => {
     setSurgeMode(true);
     setSurgeModeTimeLeft(surgeTime);
     
+    // Increment SURGE MODE activations for achievement tracking
+    setSurgeModeActivations(prev => prev + 1);
+    
     // Clear previous timeout if exists
     if (surgeModeTimeoutRef.current) {
       clearTimeout(surgeModeTimeoutRef.current);
@@ -188,6 +196,13 @@ const GameContainer = () => {
     handleClick(surgeMode ? 2 : 1);
   };
 
+  // Update last saved timestamp when gameState changes
+  useEffect(() => {
+    if (gameState.lastSaved) {
+      setLastSaved(new Date(gameState.lastSaved));
+    }
+  }, [gameState.lastSaved]);
+
   useEffect(() => {
     // Check for achievements
     const newAchievements = [...localAchievements];
@@ -203,7 +218,7 @@ const GameContainer = () => {
       }
     }
 
-    // Click master
+    // Click master (100 clicks)
     if (gameState.totalClicks >= 100 && !newAchievements.find(a => a.id === 'click-master')?.isUnlocked) {
       const achievement = newAchievements.find(a => a.id === 'click-master');
       if (achievement) {
@@ -212,10 +227,40 @@ const GameContainer = () => {
         showAchievementToast(achievement);
       }
     }
+    
+    // Click enthusiast (1,000 clicks)
+    if (gameState.totalClicks >= 1000 && !newAchievements.find(a => a.id === 'click-enthusiast')?.isUnlocked) {
+      const achievement = newAchievements.find(a => a.id === 'click-enthusiast');
+      if (achievement) {
+        achievement.isUnlocked = true;
+        changed = true;
+        showAchievementToast(achievement);
+      }
+    }
 
-    // Points collector
+    // Points collector (1,000 points)
     if (gameState.totalPoints >= 1000 && !newAchievements.find(a => a.id === 'points-collector')?.isUnlocked) {
       const achievement = newAchievements.find(a => a.id === 'points-collector');
+      if (achievement) {
+        achievement.isUnlocked = true;
+        changed = true;
+        showAchievementToast(achievement);
+      }
+    }
+    
+    // Points hoarder (100,000 points)
+    if (gameState.totalPoints >= 100000 && !newAchievements.find(a => a.id === 'points-hoarder')?.isUnlocked) {
+      const achievement = newAchievements.find(a => a.id === 'points-hoarder');
+      if (achievement) {
+        achievement.isUnlocked = true;
+        changed = true;
+        showAchievementToast(achievement);
+      }
+    }
+    
+    // Points tycoon (1,000,000 points)
+    if (gameState.totalPoints >= 1000000 && !newAchievements.find(a => a.id === 'points-tycoon')?.isUnlocked) {
+      const achievement = newAchievements.find(a => a.id === 'points-tycoon');
       if (achievement) {
         achievement.isUnlocked = true;
         changed = true;
@@ -242,11 +287,59 @@ const GameContainer = () => {
         showAchievementToast(achievement);
       }
     }
+    
+    // Pet friend (first pet)
+    if (gameState.pets.some(p => p.owned) && !newAchievements.find(a => a.id === 'pet-friend')?.isUnlocked) {
+      const achievement = newAchievements.find(a => a.id === 'pet-friend');
+      if (achievement) {
+        achievement.isUnlocked = true;
+        changed = true;
+        showAchievementToast(achievement);
+      }
+    }
+    
+    // Pet collector (all pets)
+    const allPets = gameState.pets.filter(p => p.unlocked).length;
+    const ownedPets = gameState.pets.filter(p => p.owned).length;
+    if (allPets > 0 && allPets === ownedPets && !newAchievements.find(a => a.id === 'pet-collector')?.isUnlocked) {
+      const achievement = newAchievements.find(a => a.id === 'pet-collector');
+      if (achievement) {
+        achievement.isUnlocked = true;
+        changed = true;
+        showAchievementToast(achievement);
+      }
+    }
+    
+    // Surge master (activate SURGE MODE 5 times)
+    if (surgeModeActivations >= 5 && !newAchievements.find(a => a.id === 'surge-master')?.isUnlocked) {
+      const achievement = newAchievements.find(a => a.id === 'surge-master');
+      if (achievement) {
+        achievement.isUnlocked = true;
+        changed = true;
+        showAchievementToast(achievement);
+      }
+    }
 
     if (changed) {
       setLocalAchievements(newAchievements);
+      
+      // Save achievements to localStorage
+      localStorage.setItem('clickerGameAchievements', JSON.stringify(newAchievements));
     }
-  }, [gameState, localAchievements]);
+  }, [gameState, localAchievements, surgeModeActivations]);
+  
+  // Load achievements from localStorage on mount
+  useEffect(() => {
+    const savedAchievements = localStorage.getItem('clickerGameAchievements');
+    if (savedAchievements) {
+      try {
+        const parsed = JSON.parse(savedAchievements);
+        setLocalAchievements(parsed);
+      } catch (error) {
+        console.error('Failed to parse saved achievements:', error);
+      }
+    }
+  }, []);
   
   const showAchievementToast = (achievement: typeof localAchievements[0]) => {
     toast({
@@ -297,10 +390,6 @@ const GameContainer = () => {
     };
   };
   
-  if (!mounted) {
-    return null;
-  }
-  
   return (
     <div className="container max-w-5xl mx-auto px-4 py-6 relative overflow-hidden">
       {/* Bonus mole */}
@@ -322,6 +411,14 @@ const GameContainer = () => {
         <div className="fixed top-20 left-1/2 transform -translate-x-1/2 bg-red-600 text-white px-4 py-2 rounded-full flex items-center gap-2 z-50 animate-pulse">
           <Zap size={16} className="text-yellow-300" />
           <span className="font-bold">SURGE MODE: {surgeModeTimeLeft}s</span>
+        </div>
+      )}
+      
+      {/* Last save indicator */}
+      {lastSaved && (
+        <div className="fixed bottom-4 right-4 text-xs text-gray-500 flex items-center gap-1">
+          <Save size={12} />
+          <span>Last saved: {lastSaved.toLocaleTimeString()}</span>
         </div>
       )}
       

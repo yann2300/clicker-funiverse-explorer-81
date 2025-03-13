@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from 'react';
 import { toast } from "@/hooks/use-toast";
 import { GameState, Upgrade, Pet } from '@/types/gameState';
@@ -224,14 +225,17 @@ export const useGameState = () => {
     return () => clearInterval(timer);
   }, [gameState.pointsPerSecond, gameState.pointsMultiplier, gameState.pets, addPoints, calculatePetBonuses]);
   
-  // Auto-save game state every 10 seconds
+  // Auto-save game state every 5 seconds instead of 10
   useEffect(() => {
     const saveTimer = setInterval(() => {
-      localStorage.setItem('clickerGameState', JSON.stringify({
+      const currentState = {
         ...gameState,
         lastSaved: new Date(),
-      }));
-    }, 10000);
+      };
+      
+      localStorage.setItem('clickerGameState', JSON.stringify(currentState));
+      setGameState(currentState);
+    }, 5000); // Changed from 10000 to 5000 (5 seconds)
     
     return () => clearInterval(saveTimer);
   }, [gameState]);
@@ -239,6 +243,7 @@ export const useGameState = () => {
   // Reset game state
   const resetGame = useCallback(() => {
     localStorage.removeItem('clickerGameState');
+    localStorage.removeItem('clickerGameAchievements'); // Also clear achievements
     setGameState({ ...initialGameState });
     toast({
       title: "Game Reset",
