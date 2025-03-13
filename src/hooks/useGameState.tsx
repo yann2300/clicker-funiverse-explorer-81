@@ -143,12 +143,12 @@ export const useGameState = () => {
     }));
   }, []);
   
-  // Handle clicking the main button
-  const handleClick = useCallback(() => {
+  // Handle clicking the main button, with an optional multiplier for SURGE MODE
+  const handleClick = useCallback((multiplier = 1) => {
     setGameState(prev => ({
       ...prev,
-      points: prev.points + prev.pointsPerClick,
-      totalPoints: prev.totalPoints + prev.pointsPerClick,
+      points: prev.points + (prev.pointsPerClick * multiplier),
+      totalPoints: prev.totalPoints + (prev.pointsPerClick * multiplier),
       totalClicks: prev.totalClicks + 1,
     }));
   }, []);

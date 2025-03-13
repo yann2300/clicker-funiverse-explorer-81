@@ -1,12 +1,12 @@
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import ClickerButton from './ClickerButton';
 import UpgradeShop from './UpgradeShop';
 import Stats from './Stats';
 import useGameState from '@/hooks/useGameState';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
-import { RefreshCw, Trophy } from 'lucide-react';
+import { RefreshCw, Trophy, Zap } from 'lucide-react';
 import AchievementsSidebar from './AchievementsSidebar';
 import { achievements } from '@/lib/achievements';
 import { toast } from "@/hooks/use-toast";
@@ -17,9 +17,149 @@ const GameContainer = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [localAchievements, setLocalAchievements] = useState(achievements);
   
+  // SURGE MODE states
+  const [surgeMode, setSurgeMode] = useState(false);
+  const [surgeModeTimeLeft, setSurgeModeTimeLeft] = useState(0);
+  const surgeModeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const surgeIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  
+  // Bonus mole states
+  const [showBonus, setShowBonus] = useState(false);
+  const [bonusPosition, setBonusPosition] = useState({ x: 0, y: 0, corner: 0, entering: true });
+  const bonusTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  // Check for bonus appearance
+  useEffect(() => {
+    if (gameState.totalClicks >= 10 && !showBonus && !surgeMode) {
+      // Random chance to show bonus (1 in 10 chance every second)
+      const bonusCheck = setInterval(() => {
+        if (Math.random() < 0.1 && !showBonus && !surgeMode) {
+          showBonusMole();
+        }
+      }, 1000);
+      
+      return () => clearInterval(bonusCheck);
+    }
+  }, [gameState.totalClicks, showBonus, surgeMode]);
+  
+  // Handle SURGE MODE timer
+  useEffect(() => {
+    if (surgeMode) {
+      if (surgeIntervalRef.current) {
+        clearInterval(surgeIntervalRef.current);
+      }
+      
+      surgeIntervalRef.current = setInterval(() => {
+        setSurgeModeTimeLeft(prev => {
+          if (prev <= 1) {
+            clearInterval(surgeIntervalRef.current!);
+            setSurgeMode(false);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    }
+    
+    return () => {
+      if (surgeIntervalRef.current) {
+        clearInterval(surgeIntervalRef.current);
+      }
+    };
+  }, [surgeMode]);
+  
+  // Show bonus mole function
+  const showBonusMole = () => {
+    const corner = Math.floor(Math.random() * 4); // 0: top-left, 1: top-right, 2: bottom-left, 3: bottom-right
+    
+    let x = 0;
+    let y = 0;
+    
+    // Position based on corner
+    switch (corner) {
+      case 0: // top-left
+        x = -30;
+        y = Math.floor(Math.random() * 200) - 30;
+        break;
+      case 1: // top-right
+        x = window.innerWidth - 30;
+        y = Math.floor(Math.random() * 200) - 30;
+        break;
+      case 2: // bottom-left
+        x = -30;
+        y = window.innerHeight - Math.floor(Math.random() * 200) - 30;
+        break;
+      case 3: // bottom-right
+        x = window.innerWidth - 30;
+        y = window.innerHeight - Math.floor(Math.random() * 200) - 30;
+        break;
+    }
+    
+    setBonusPosition({ x, y, corner, entering: true });
+    setShowBonus(true);
+    
+    // Start animation sequence
+    // 1. Enter animation (30px)
+    setTimeout(() => {
+      setBonusPosition(prev => ({ ...prev, entering: false }));
+      
+      // 2. Wait a bit then start exit animation
+      bonusTimeoutRef.current = setTimeout(() => {
+        hideBonus();
+      }, 3000);
+    }, 1000);
+  };
+  
+  const hideBonus = () => {
+    setBonusPosition(prev => ({ ...prev, entering: true }));
+    
+    // After exit animation, hide completely
+    setTimeout(() => {
+      setShowBonus(false);
+    }, 1000);
+  };
+  
+  // Handle bonus click - activate SURGE MODE
+  const handleBonusClick = () => {
+    // Clear bonus timeout if active
+    if (bonusTimeoutRef.current) {
+      clearTimeout(bonusTimeoutRef.current);
+      bonusTimeoutRef.current = null;
+    }
+    
+    // Hide bonus
+    setShowBonus(false);
+    
+    // Activate SURGE MODE
+    setSurgeMode(true);
+    setSurgeModeTimeLeft(10);
+    
+    // Clear previous timeout if exists
+    if (surgeModeTimeoutRef.current) {
+      clearTimeout(surgeModeTimeoutRef.current);
+    }
+    
+    // Set timeout to end SURGE MODE
+    surgeModeTimeoutRef.current = setTimeout(() => {
+      setSurgeMode(false);
+    }, 10000);
+    
+    // Show toast
+    toast({
+      title: "SURGE MODE ACTIVATED!",
+      description: "2x points for 10 seconds!",
+    });
+  };
+  
+  // Customized click handler for SURGE MODE
+  const handleGameClick = () => {
+    // If in SURGE MODE, double points
+    handleClick(surgeMode ? 2 : 1);
+  };
 
   useEffect(() => {
     // Check for achievements
@@ -92,8 +232,68 @@ const GameContainer = () => {
     return null;
   }
   
+  // Calculate bonus position styles based on corner and animation state
+  const getBonusStyles = () => {
+    const baseStyles = {
+      position: 'fixed',
+      width: '30px',
+      height: '30px',
+      zIndex: 100,
+      cursor: 'pointer',
+      transition: 'all 1s ease-out',
+    };
+    
+    // Determine offsets based on corner
+    let x = bonusPosition.x;
+    let y = bonusPosition.y;
+    
+    // Apply offset based on animation state
+    switch (bonusPosition.corner) {
+      case 0: // top-left
+        x += bonusPosition.entering ? 0 : 30;
+        break;
+      case 1: // top-right
+        x -= bonusPosition.entering ? 0 : 30;
+        break;
+      case 2: // bottom-left
+        x += bonusPosition.entering ? 0 : 30;
+        break;
+      case 3: // bottom-right
+        x -= bonusPosition.entering ? 0 : 30;
+        break;
+    }
+    
+    return {
+      ...baseStyles,
+      left: `${x}px`,
+      top: `${y}px`,
+    };
+  };
+  
   return (
     <div className="container max-w-5xl mx-auto px-4 py-6 relative overflow-hidden">
+      {/* Bonus mole */}
+      {showBonus && (
+        <div 
+          onClick={handleBonusClick}
+          style={getBonusStyles() as React.CSSProperties}
+        >
+          <img 
+            src="https://dejpknyizje2n.cloudfront.net/media/carstickers/versions/mole-pixel-sticker-ud740-811c-x450.png" 
+            alt="Bonus" 
+            className="w-full h-full object-contain"
+          />
+        </div>
+      )}
+      
+      {/* SURGE MODE timer */}
+      {surgeMode && (
+        <div className="fixed top-20 left-1/2 transform -translate-x-1/2 bg-red-600 text-white px-4 py-2 rounded-full flex items-center gap-2 z-50 animate-pulse">
+          <Zap size={16} className="text-yellow-300" />
+          <span className="font-bold">SURGE MODE: {surgeModeTimeLeft}s</span>
+        </div>
+      )}
+      
       {/* Reset and Achievements buttons */}
       <div className="absolute top-6 right-6 z-10 flex gap-2">
         <Button
@@ -133,16 +333,17 @@ const GameContainer = () => {
         <div className="md:col-span-1 space-y-6 order-2 md:order-1">
           <Stats 
             points={gameState.points}
-            pointsPerClick={gameState.pointsPerClick}
-            pointsPerSecond={gameState.pointsPerSecond}
+            pointsPerClick={gameState.pointsPerClick * (surgeMode ? 2 : 1)}
+            pointsPerSecond={gameState.pointsPerSecond * (surgeMode ? 2 : 1)}
             totalClicks={gameState.totalClicks}
             totalPoints={gameState.totalPoints}
           />
           
           <div className="glass-panel rounded-2xl p-4 flex flex-col items-center justify-center">
             <ClickerButton 
-              onClick={handleClick}
-              pointsPerClick={gameState.pointsPerClick}
+              onClick={handleGameClick}
+              pointsPerClick={gameState.pointsPerClick * (surgeMode ? 2 : 1)}
+              surgeMode={surgeMode}
             />
           </div>
         </div>
