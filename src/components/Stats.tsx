@@ -1,7 +1,7 @@
 
 import AnimatedCounter from './AnimatedCounter';
 import { formatNumber } from '@/lib/gameUtils';
-import { MousePointer, Timer, BarChart } from 'lucide-react';
+import { MousePointer, Timer, BarChart, BadgePercent } from 'lucide-react';
 
 interface StatsProps {
   points: number;
@@ -36,6 +36,7 @@ const Stats = ({
             <div className="flex items-center text-game-text mb-1">
               <MousePointer size={16} className="mr-1 text-game-accent" />
               <span className="text-sm">Per Click</span>
+              {pointsPerClick > 1 && <BadgePercent size={12} className="ml-1 text-blue-500" />}
             </div>
             <span className="text-xl font-semibold tracking-tight text-game-text">
               <AnimatedCounter value={pointsPerClick} duration={800} />
@@ -47,6 +48,7 @@ const Stats = ({
             <div className="flex items-center text-game-text mb-1">
               <Timer size={16} className="mr-1 text-amber-500" />
               <span className="text-sm">Per Second</span>
+              {pointsPerSecond > 0 && <BadgePercent size={12} className="ml-1 text-blue-500" />}
             </div>
             <span className="text-xl font-semibold tracking-tight text-game-text">
               <AnimatedCounter value={pointsPerSecond} duration={800} />

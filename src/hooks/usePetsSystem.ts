@@ -83,18 +83,20 @@ export const usePetsSystem = () => {
   
   // Calculate bonus values from owned pets
   const calculatePetBonuses = useCallback((pets: Pet[]) => {
-    // Initialize bonuses
-    let pointsMultiplier = 1.0; // Start with 100%
+    // Initialize bonuses with base values
+    // For pointsMultiplier, we start with 1.0 (100%) as the base value
+    let pointsMultiplier = 1.0;
     let surgeTimeBonus = 0;
     let clickValueBoost = 0;
     let passiveBoost = 0;
     let surgeModeChance = 0;
     
-    // Sum up all pet bonuses
+    // Apply all pet bonuses
     for (const pet of pets) {
       if (pet.owned) {
         switch (pet.bonusType) {
           case 'pointsMultiplier':
+            // For Fluffy: add 0.1 (10%) to the multiplier
             pointsMultiplier += pet.bonusValue;
             break;
           case 'surgeTimeBonus':

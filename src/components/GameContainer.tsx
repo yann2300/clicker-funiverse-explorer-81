@@ -9,6 +9,8 @@ import { RefreshCw, Trophy, Zap, Save } from 'lucide-react';
 import AchievementsSidebar from './AchievementsSidebar';
 import { achievements } from '@/lib/achievements';
 import { toast } from "@/hooks/use-toast";
+import StatsBreakdown from './StatsBreakdown';
+import usePetsSystem from '@/hooks/usePetsSystem';
 
 // Konami code sequence
 const KONAMI_CODE = [
@@ -45,12 +47,19 @@ const GameContainer = () => {
   // Last save indicator
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   
+  // To store raw stat values before applying bonuses
+  const [rawStats, setRawStats] = useState({
+    pointsPerClick: 1,
+    pointsPerSecond: 0
+  });
+  
   // Konami code tracking
   const [konamiSequence, setKonamiSequence] = useState<string[]>([]);
   
   // Previously unlockedAchievements to track changes
   const previouslyUnlockedRef = useRef<Set<string>>(new Set());
-  
+  const { calculatePetBonuses } = usePetsSystem();
+
   useEffect(() => {
     setMounted(true);
   }, []);
@@ -310,6 +319,14 @@ const GameContainer = () => {
     // Mark initial load as complete after loading saved achievements
     setIsInitialLoad(false);
   }, []);
+
+  // Update raw stats when gameState changes
+  useEffect(() => {
+    setRawStats({
+      pointsPerClick: gameState.pointsPerClick,
+      pointsPerSecond: gameState.pointsPerSecond
+    });
+  }, [gameState.pointsPerClick, gameState.pointsPerSecond]);
 
   // Update achievement progress and check for unlocks
   useEffect(() => {
@@ -588,6 +605,20 @@ const GameContainer = () => {
             pointsPerSecond={gameState.pointsPerSecond * (surgeMode ? 2 : 1)}
             totalClicks={gameState.totalClicks}
             totalPoints={gameState.totalPoints}
+          />
+          
+          {/* Add Stats Breakdown */}
+          <StatsBreakdown 
+            pointsPerClick={gameState.pointsPerClick * (surgeMode ? 2 : 1)}
+            rawPointsPerClick={rawStats.pointsPerClick * (surgeMode ? 2 : 1)}
+            pointsPerSecond={gameState.pointsPerSecond * (surgeMode ? 2 : 1)}
+            rawPointsPerSecond={rawStats.pointsPerSecond * (surgeMode ? 2 : 1)}
+            pointsMultiplier={gameState.pointsMultiplier}
+            surgeTimeBonus={gameState.surgeTimeBonus}
+            clickValueBoost={calculatePetBonuses(gameState.pets).clickValueBoost}
+            passiveBoost={calculatePetBonuses(gameState.pets).passiveBoost}
+            surgeModeChance={calculatePetBonuses(gameState.pets).surgeModeChance}
+            surgeMode={surgeMode}
           />
           
           <div className="glass-panel rounded-2xl p-4 flex flex-col items-center justify-center">
