@@ -4,6 +4,7 @@ import { X } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Achievement } from '@/lib/achievements';
 import * as LucideIcons from 'lucide-react';
+import { Progress } from "@/components/ui/progress";
 
 interface AchievementsSidebarProps {
   achievements: Achievement[];
@@ -26,6 +27,12 @@ const AchievementsSidebar = ({ achievements, isOpen, onClose }: AchievementsSide
         <div className="space-y-4">
           {achievements.map((achievement) => {
             const IconComponent = (LucideIcons as any)[achievement.icon] || LucideIcons.Award;
+            
+            // Calculate progress percentage
+            const progressPercentage = achievement.progressMax && achievement.progress !== undefined
+              ? Math.min(100, (achievement.progress / achievement.progressMax) * 100)
+              : 0;
+            
             return (
               <div
                 key={achievement.id}
@@ -43,7 +50,18 @@ const AchievementsSidebar = ({ achievements, isOpen, onClose }: AchievementsSide
                   />
                   <h3 className="font-semibold">{achievement.title}</h3>
                 </div>
-                <p className="text-sm text-gray-600">{achievement.description}</p>
+                <p className="text-sm text-gray-600 mb-2">{achievement.description}</p>
+                
+                {/* Show progress bar and count */}
+                {achievement.progressMax && achievement.progress !== undefined && (
+                  <div className="mt-2">
+                    <div className="flex justify-between text-xs text-gray-500 mb-1">
+                      <span>Progress: {achievement.progress} / {achievement.progressMax}</span>
+                      <span>{Math.floor(progressPercentage)}%</span>
+                    </div>
+                    <Progress value={progressPercentage} className="h-2" />
+                  </div>
+                )}
               </div>
             );
           })}

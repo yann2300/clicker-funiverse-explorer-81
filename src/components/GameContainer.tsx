@@ -1,4 +1,5 @@
-import { useEffect, useState, useRef } from 'react';
+
+import { useEffect, useState, useRef, useCallback } from 'react';
 import ClickerButton from './ClickerButton';
 import UpgradeShop from './UpgradeShop';
 import Stats from './Stats';
@@ -10,8 +11,17 @@ import AchievementsSidebar from './AchievementsSidebar';
 import { achievements } from '@/lib/achievements';
 import { toast } from "@/hooks/use-toast";
 
+// Konami code sequence
+const KONAMI_CODE = [
+  'ArrowUp', 'ArrowUp', 
+  'ArrowDown', 'ArrowDown', 
+  'ArrowLeft', 'ArrowRight', 
+  'ArrowLeft', 'ArrowRight', 
+  'b', 'a'
+];
+
 const GameContainer = () => {
-  const { gameState, handleClick, purchaseUpgrade, purchasePet, calculateUpgradeCost, resetGame, getSurgeTime } = useGameState();
+  const { gameState, handleClick, purchaseUpgrade, purchasePet, calculateUpgradeCost, resetGame, getSurgeTime, saveGameState } = useGameState();
   const [mounted, setMounted] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [localAchievements, setLocalAchievements] = useState(achievements);
@@ -32,6 +42,9 @@ const GameContainer = () => {
   
   // Last save indicator
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
+  
+  // Konami code tracking
+  const [konamiSequence, setKonamiSequence] = useState<string[]>([]);
   
   useEffect(() => {
     setMounted(true);
@@ -87,6 +100,58 @@ const GameContainer = () => {
       }
     };
   }, [surgeMode]);
+  
+  // Keyboard event listener for Konami code
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Convert key to lowercase for b and a
+      const key = ['a', 'b'].includes(e.key.toLowerCase()) 
+        ? e.key.toLowerCase() 
+        : e.key;
+      
+      setKonamiSequence(prev => {
+        // Add the new key to the end of the sequence
+        const newSequence = [...prev, key].slice(-KONAMI_CODE.length);
+        
+        // Check if the sequence matches the Konami code
+        if (newSequence.length === KONAMI_CODE.length && 
+            newSequence.every((k, i) => k === KONAMI_CODE[i])) {
+          // Unlock the Konami achievement
+          const newAchievements = [...localAchievements];
+          const konamiAchievement = newAchievements.find(a => a.id === 'konami-master');
+          
+          if (konamiAchievement && !konamiAchievement.isUnlocked) {
+            konamiAchievement.isUnlocked = true;
+            konamiAchievement.progress = 1;
+            setLocalAchievements(newAchievements);
+            
+            // Save achievements
+            localStorage.setItem('clickerGameAchievements', JSON.stringify(newAchievements));
+            
+            // Show achievement unlock toast
+            showAchievementToast(konamiAchievement);
+            
+            // Add a special bonus (e.g., 10,000 points)
+            handleClick(100); // Give a big bonus!
+            toast({
+              title: "Konami Code Activated!",
+              description: "You've received a special bonus!"
+            });
+          }
+        }
+        
+        return newSequence;
+      });
+    };
+    
+    // Add the event listener
+    window.addEventListener('keydown', handleKeyDown);
+    
+    // Clean up
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [localAchievements, handleClick]);
   
   // Show bonus mole function
   const showBonusMole = () => {
@@ -203,120 +268,136 @@ const GameContainer = () => {
     }
   }, [gameState.lastSaved]);
 
+  // Update achievement progress and check for unlocks
   useEffect(() => {
     // Check for achievements
     const newAchievements = [...localAchievements];
     let changed = false;
 
     // First click
-    if (gameState.totalClicks > 0 && !newAchievements.find(a => a.id === 'first-click')?.isUnlocked) {
-      const achievement = newAchievements.find(a => a.id === 'first-click');
-      if (achievement) {
-        achievement.isUnlocked = true;
+    const firstClickAchievement = newAchievements.find(a => a.id === 'first-click');
+    if (firstClickAchievement) {
+      firstClickAchievement.progress = Math.min(gameState.totalClicks, 1);
+      if (gameState.totalClicks > 0 && !firstClickAchievement.isUnlocked) {
+        firstClickAchievement.isUnlocked = true;
         changed = true;
-        showAchievementToast(achievement);
+        showAchievementToast(firstClickAchievement);
       }
     }
 
     // Click master (100 clicks)
-    if (gameState.totalClicks >= 100 && !newAchievements.find(a => a.id === 'click-master')?.isUnlocked) {
-      const achievement = newAchievements.find(a => a.id === 'click-master');
-      if (achievement) {
-        achievement.isUnlocked = true;
+    const clickMasterAchievement = newAchievements.find(a => a.id === 'click-master');
+    if (clickMasterAchievement) {
+      clickMasterAchievement.progress = Math.min(gameState.totalClicks, 100);
+      if (gameState.totalClicks >= 100 && !clickMasterAchievement.isUnlocked) {
+        clickMasterAchievement.isUnlocked = true;
         changed = true;
-        showAchievementToast(achievement);
+        showAchievementToast(clickMasterAchievement);
       }
     }
     
     // Click enthusiast (1,000 clicks)
-    if (gameState.totalClicks >= 1000 && !newAchievements.find(a => a.id === 'click-enthusiast')?.isUnlocked) {
-      const achievement = newAchievements.find(a => a.id === 'click-enthusiast');
-      if (achievement) {
-        achievement.isUnlocked = true;
+    const clickEnthusiastAchievement = newAchievements.find(a => a.id === 'click-enthusiast');
+    if (clickEnthusiastAchievement) {
+      clickEnthusiastAchievement.progress = Math.min(gameState.totalClicks, 1000);
+      if (gameState.totalClicks >= 1000 && !clickEnthusiastAchievement.isUnlocked) {
+        clickEnthusiastAchievement.isUnlocked = true;
         changed = true;
-        showAchievementToast(achievement);
+        showAchievementToast(clickEnthusiastAchievement);
       }
     }
 
     // Points collector (1,000 points)
-    if (gameState.totalPoints >= 1000 && !newAchievements.find(a => a.id === 'points-collector')?.isUnlocked) {
-      const achievement = newAchievements.find(a => a.id === 'points-collector');
-      if (achievement) {
-        achievement.isUnlocked = true;
+    const pointsCollectorAchievement = newAchievements.find(a => a.id === 'points-collector');
+    if (pointsCollectorAchievement) {
+      pointsCollectorAchievement.progress = Math.min(gameState.totalPoints, 1000);
+      if (gameState.totalPoints >= 1000 && !pointsCollectorAchievement.isUnlocked) {
+        pointsCollectorAchievement.isUnlocked = true;
         changed = true;
-        showAchievementToast(achievement);
+        showAchievementToast(pointsCollectorAchievement);
       }
     }
     
     // Points hoarder (100,000 points)
-    if (gameState.totalPoints >= 100000 && !newAchievements.find(a => a.id === 'points-hoarder')?.isUnlocked) {
-      const achievement = newAchievements.find(a => a.id === 'points-hoarder');
-      if (achievement) {
-        achievement.isUnlocked = true;
+    const pointsHoarderAchievement = newAchievements.find(a => a.id === 'points-hoarder');
+    if (pointsHoarderAchievement) {
+      pointsHoarderAchievement.progress = Math.min(gameState.totalPoints, 100000);
+      if (gameState.totalPoints >= 100000 && !pointsHoarderAchievement.isUnlocked) {
+        pointsHoarderAchievement.isUnlocked = true;
         changed = true;
-        showAchievementToast(achievement);
+        showAchievementToast(pointsHoarderAchievement);
       }
     }
     
     // Points tycoon (1,000,000 points)
-    if (gameState.totalPoints >= 1000000 && !newAchievements.find(a => a.id === 'points-tycoon')?.isUnlocked) {
-      const achievement = newAchievements.find(a => a.id === 'points-tycoon');
-      if (achievement) {
-        achievement.isUnlocked = true;
+    const pointsTycoonAchievement = newAchievements.find(a => a.id === 'points-tycoon');
+    if (pointsTycoonAchievement) {
+      pointsTycoonAchievement.progress = Math.min(gameState.totalPoints, 1000000);
+      if (gameState.totalPoints >= 1000000 && !pointsTycoonAchievement.isUnlocked) {
+        pointsTycoonAchievement.isUnlocked = true;
         changed = true;
-        showAchievementToast(achievement);
+        showAchievementToast(pointsTycoonAchievement);
       }
     }
 
     // Upgrade novice
-    if (gameState.upgrades.some(u => u.currentLevel > 0) && !newAchievements.find(a => a.id === 'upgrade-novice')?.isUnlocked) {
-      const achievement = newAchievements.find(a => a.id === 'upgrade-novice');
-      if (achievement) {
-        achievement.isUnlocked = true;
+    const upgradeNoviceAchievement = newAchievements.find(a => a.id === 'upgrade-novice');
+    if (upgradeNoviceAchievement) {
+      const hasUpgrades = gameState.upgrades.some(u => u.currentLevel > 0);
+      upgradeNoviceAchievement.progress = hasUpgrades ? 1 : 0;
+      if (hasUpgrades && !upgradeNoviceAchievement.isUnlocked) {
+        upgradeNoviceAchievement.isUnlocked = true;
         changed = true;
-        showAchievementToast(achievement);
+        showAchievementToast(upgradeNoviceAchievement);
       }
     }
 
     // Automation beginner
-    if (gameState.upgrades.some(u => u.type === 'passive' && u.currentLevel > 0) && !newAchievements.find(a => a.id === 'automation-beginner')?.isUnlocked) {
-      const achievement = newAchievements.find(a => a.id === 'automation-beginner');
-      if (achievement) {
-        achievement.isUnlocked = true;
+    const automationBeginnerAchievement = newAchievements.find(a => a.id === 'automation-beginner');
+    if (automationBeginnerAchievement) {
+      const hasPassiveUpgrades = gameState.upgrades.some(u => u.type === 'passive' && u.currentLevel > 0);
+      automationBeginnerAchievement.progress = hasPassiveUpgrades ? 1 : 0;
+      if (hasPassiveUpgrades && !automationBeginnerAchievement.isUnlocked) {
+        automationBeginnerAchievement.isUnlocked = true;
         changed = true;
-        showAchievementToast(achievement);
+        showAchievementToast(automationBeginnerAchievement);
       }
     }
     
     // Pet friend (first pet)
-    if (gameState.pets.some(p => p.owned) && !newAchievements.find(a => a.id === 'pet-friend')?.isUnlocked) {
-      const achievement = newAchievements.find(a => a.id === 'pet-friend');
-      if (achievement) {
-        achievement.isUnlocked = true;
+    const petFriendAchievement = newAchievements.find(a => a.id === 'pet-friend');
+    if (petFriendAchievement) {
+      const hasPets = gameState.pets.some(p => p.owned);
+      petFriendAchievement.progress = hasPets ? 1 : 0;
+      if (hasPets && !petFriendAchievement.isUnlocked) {
+        petFriendAchievement.isUnlocked = true;
         changed = true;
-        showAchievementToast(achievement);
+        showAchievementToast(petFriendAchievement);
       }
     }
     
     // Pet collector (all pets)
-    const allPets = gameState.pets.filter(p => p.unlocked).length;
-    const ownedPets = gameState.pets.filter(p => p.owned).length;
-    if (allPets > 0 && allPets === ownedPets && !newAchievements.find(a => a.id === 'pet-collector')?.isUnlocked) {
-      const achievement = newAchievements.find(a => a.id === 'pet-collector');
-      if (achievement) {
-        achievement.isUnlocked = true;
+    const petCollectorAchievement = newAchievements.find(a => a.id === 'pet-collector');
+    if (petCollectorAchievement) {
+      const totalUnlockedPets = gameState.pets.filter(p => p.unlocked).length;
+      const ownedPets = gameState.pets.filter(p => p.owned).length;
+      petCollectorAchievement.progress = ownedPets;
+      
+      if (totalUnlockedPets > 0 && totalUnlockedPets === ownedPets && !petCollectorAchievement.isUnlocked) {
+        petCollectorAchievement.isUnlocked = true;
         changed = true;
-        showAchievementToast(achievement);
+        showAchievementToast(petCollectorAchievement);
       }
     }
     
     // Surge master (activate SURGE MODE 5 times)
-    if (surgeModeActivations >= 5 && !newAchievements.find(a => a.id === 'surge-master')?.isUnlocked) {
-      const achievement = newAchievements.find(a => a.id === 'surge-master');
-      if (achievement) {
-        achievement.isUnlocked = true;
+    const surgeMasterAchievement = newAchievements.find(a => a.id === 'surge-master');
+    if (surgeMasterAchievement) {
+      surgeMasterAchievement.progress = Math.min(surgeModeActivations, 5);
+      if (surgeModeActivations >= 5 && !surgeMasterAchievement.isUnlocked) {
+        surgeMasterAchievement.isUnlocked = true;
         changed = true;
-        showAchievementToast(achievement);
+        showAchievementToast(surgeMasterAchievement);
       }
     }
 
@@ -334,7 +415,21 @@ const GameContainer = () => {
     if (savedAchievements) {
       try {
         const parsed = JSON.parse(savedAchievements);
-        setLocalAchievements(parsed);
+        
+        // Ensure all achievements have progress properties
+        const updatedAchievements = parsed.map((savedAchievement: any) => {
+          const baseAchievement = achievements.find(a => a.id === savedAchievement.id);
+          if (baseAchievement && baseAchievement.progressMax && savedAchievement.progress === undefined) {
+            return { 
+              ...savedAchievement, 
+              progress: savedAchievement.isUnlocked ? baseAchievement.progressMax : 0,
+              progressMax: baseAchievement.progressMax
+            };
+          }
+          return savedAchievement;
+        });
+        
+        setLocalAchievements(updatedAchievements);
       } catch (error) {
         console.error('Failed to parse saved achievements:', error);
       }

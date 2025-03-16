@@ -56,6 +56,17 @@ export const useGameState = () => {
 
   const [gameState, setGameState] = useState<GameState>(loadState);
   
+  // Save game state to localStorage
+  const saveGameState = useCallback(() => {
+    const currentState = {
+      ...gameState,
+      lastSaved: new Date(),
+    };
+    
+    localStorage.setItem('clickerGameState', JSON.stringify(currentState));
+    setGameState(currentState);
+  }, [gameState]);
+  
   // Calculate upgrade cost based on its base cost and current level
   const calculateUpgradeCost = useCallback((upgrade: Upgrade): number => {
     return Math.floor(upgrade.baseCost * Math.pow(1.15, upgrade.currentLevel));
@@ -143,13 +154,9 @@ export const useGameState = () => {
       // Recalculate pet bonuses after buying the upgrade
       const petBonuses = calculatePetBonuses(updatedPets);
       
-      // Show toast for upgrade purchase
-      toast({
-        title: "Upgrade Purchased",
-        description: `Upgraded ${upgrade.name} to level ${upgrade.currentLevel + 1}`
-      });
+      // Removed toast notification for upgrades
       
-      return {
+      const newState = {
         ...prev,
         points: prev.points - cost,
         pointsPerClick: newPointsPerClick,
@@ -157,8 +164,14 @@ export const useGameState = () => {
         pointsMultiplier: petBonuses.pointsMultiplier,
         surgeTimeBonus: petBonuses.surgeTimeBonus,
         upgrades: newUpgrades,
-        pets: updatedPets
+        pets: updatedPets,
+        lastSaved: new Date(),
       };
+      
+      // Immediately save after purchase
+      localStorage.setItem('clickerGameState', JSON.stringify(newState));
+      
+      return newState;
     });
   }, [calculateUpgradeCost, updateUnlockedPets, calculateNewClickValue, calculatePetBonuses]);
   
@@ -191,20 +204,22 @@ export const useGameState = () => {
       // Fix: Recalculate pointsPerClick with pet bonuses
       const newPointsPerClick = calculateNewClickValue(1, prev.upgrades);
       
-      // Show toast for pet purchase
-      toast({
-        title: "Pet Adopted!",
-        description: `${pet.name} has joined your team!`
-      });
+      // Removed toast notification for pet purchases
       
-      return {
+      const newState = {
         ...prev,
         points: prev.points - pet.cost,
         pets: newPets,
         pointsPerClick: newPointsPerClick,
         pointsMultiplier: petBonuses.pointsMultiplier,
-        surgeTimeBonus: petBonuses.surgeTimeBonus
+        surgeTimeBonus: petBonuses.surgeTimeBonus,
+        lastSaved: new Date(),
       };
+      
+      // Immediately save after purchase
+      localStorage.setItem('clickerGameState', JSON.stringify(newState));
+      
+      return newState;
     });
   }, [calculatePetBonuses, calculateNewClickValue]);
   
@@ -227,18 +242,10 @@ export const useGameState = () => {
   
   // Auto-save game state every 5 seconds instead of 10
   useEffect(() => {
-    const saveTimer = setInterval(() => {
-      const currentState = {
-        ...gameState,
-        lastSaved: new Date(),
-      };
-      
-      localStorage.setItem('clickerGameState', JSON.stringify(currentState));
-      setGameState(currentState);
-    }, 5000); // Changed from 10000 to 5000 (5 seconds)
+    const saveTimer = setInterval(saveGameState, 5000); // 5 seconds
     
     return () => clearInterval(saveTimer);
-  }, [gameState]);
+  }, [saveGameState]);
   
   // Reset game state
   const resetGame = useCallback(() => {
@@ -264,6 +271,7 @@ export const useGameState = () => {
     calculateUpgradeCost,
     resetGame,
     getSurgeTime,
+    saveGameState,
   };
 };
 
