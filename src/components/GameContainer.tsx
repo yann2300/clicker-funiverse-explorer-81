@@ -48,6 +48,9 @@ const GameContainer = () => {
   // Konami code tracking
   const [konamiSequence, setKonamiSequence] = useState<string[]>([]);
   
+  // Previously unlockedAchievements to track changes
+  const previouslyUnlockedRef = useRef<Set<string>>(new Set());
+  
   useEffect(() => {
     setMounted(true);
   }, []);
@@ -270,7 +273,7 @@ const GameContainer = () => {
     }
   }, [gameState.lastSaved]);
 
-  // Load achievements from localStorage on mount
+  // Load achievements from localStorage on mount and init previouslyUnlockedRef
   useEffect(() => {
     const savedAchievements = localStorage.getItem('clickerGameAchievements');
     if (savedAchievements) {
@@ -291,6 +294,14 @@ const GameContainer = () => {
         });
         
         setLocalAchievements(updatedAchievements);
+        
+        // Initialize previously unlocked achievements set
+        const unlockedIds = new Set(
+          updatedAchievements
+            .filter((a: any) => a.isUnlocked)
+            .map((a: any) => a.id)
+        );
+        previouslyUnlockedRef.current = unlockedIds;
       } catch (error) {
         console.error('Failed to parse saved achievements:', error);
       }
@@ -308,15 +319,16 @@ const GameContainer = () => {
     // Check for achievements
     const newAchievements = [...localAchievements];
     let changed = false;
+    const newlyUnlocked: typeof localAchievements = [];
 
     // First click
     const firstClickAchievement = newAchievements.find(a => a.id === 'first-click');
     if (firstClickAchievement) {
       firstClickAchievement.progress = Math.min(gameState.totalClicks, 1);
-      if (gameState.totalClicks > 0 && !firstClickAchievement.isUnlocked) {
+      if (gameState.totalClicks > 0 && !firstClickAchievement.isUnlocked && !previouslyUnlockedRef.current.has('first-click')) {
         firstClickAchievement.isUnlocked = true;
         changed = true;
-        showAchievementToast(firstClickAchievement);
+        newlyUnlocked.push(firstClickAchievement);
       }
     }
 
@@ -324,10 +336,10 @@ const GameContainer = () => {
     const clickMasterAchievement = newAchievements.find(a => a.id === 'click-master');
     if (clickMasterAchievement) {
       clickMasterAchievement.progress = Math.min(gameState.totalClicks, 100);
-      if (gameState.totalClicks >= 100 && !clickMasterAchievement.isUnlocked) {
+      if (gameState.totalClicks >= 100 && !clickMasterAchievement.isUnlocked && !previouslyUnlockedRef.current.has('click-master')) {
         clickMasterAchievement.isUnlocked = true;
         changed = true;
-        showAchievementToast(clickMasterAchievement);
+        newlyUnlocked.push(clickMasterAchievement);
       }
     }
     
@@ -335,10 +347,10 @@ const GameContainer = () => {
     const clickEnthusiastAchievement = newAchievements.find(a => a.id === 'click-enthusiast');
     if (clickEnthusiastAchievement) {
       clickEnthusiastAchievement.progress = Math.min(gameState.totalClicks, 1000);
-      if (gameState.totalClicks >= 1000 && !clickEnthusiastAchievement.isUnlocked) {
+      if (gameState.totalClicks >= 1000 && !clickEnthusiastAchievement.isUnlocked && !previouslyUnlockedRef.current.has('click-enthusiast')) {
         clickEnthusiastAchievement.isUnlocked = true;
         changed = true;
-        showAchievementToast(clickEnthusiastAchievement);
+        newlyUnlocked.push(clickEnthusiastAchievement);
       }
     }
 
@@ -346,10 +358,10 @@ const GameContainer = () => {
     const pointsCollectorAchievement = newAchievements.find(a => a.id === 'points-collector');
     if (pointsCollectorAchievement) {
       pointsCollectorAchievement.progress = Math.min(gameState.totalPoints, 1000);
-      if (gameState.totalPoints >= 1000 && !pointsCollectorAchievement.isUnlocked) {
+      if (gameState.totalPoints >= 1000 && !pointsCollectorAchievement.isUnlocked && !previouslyUnlockedRef.current.has('points-collector')) {
         pointsCollectorAchievement.isUnlocked = true;
         changed = true;
-        showAchievementToast(pointsCollectorAchievement);
+        newlyUnlocked.push(pointsCollectorAchievement);
       }
     }
     
@@ -357,10 +369,10 @@ const GameContainer = () => {
     const pointsHoarderAchievement = newAchievements.find(a => a.id === 'points-hoarder');
     if (pointsHoarderAchievement) {
       pointsHoarderAchievement.progress = Math.min(gameState.totalPoints, 100000);
-      if (gameState.totalPoints >= 100000 && !pointsHoarderAchievement.isUnlocked) {
+      if (gameState.totalPoints >= 100000 && !pointsHoarderAchievement.isUnlocked && !previouslyUnlockedRef.current.has('points-hoarder')) {
         pointsHoarderAchievement.isUnlocked = true;
         changed = true;
-        showAchievementToast(pointsHoarderAchievement);
+        newlyUnlocked.push(pointsHoarderAchievement);
       }
     }
     
@@ -368,10 +380,10 @@ const GameContainer = () => {
     const pointsTycoonAchievement = newAchievements.find(a => a.id === 'points-tycoon');
     if (pointsTycoonAchievement) {
       pointsTycoonAchievement.progress = Math.min(gameState.totalPoints, 1000000);
-      if (gameState.totalPoints >= 1000000 && !pointsTycoonAchievement.isUnlocked) {
+      if (gameState.totalPoints >= 1000000 && !pointsTycoonAchievement.isUnlocked && !previouslyUnlockedRef.current.has('points-tycoon')) {
         pointsTycoonAchievement.isUnlocked = true;
         changed = true;
-        showAchievementToast(pointsTycoonAchievement);
+        newlyUnlocked.push(pointsTycoonAchievement);
       }
     }
 
@@ -380,10 +392,10 @@ const GameContainer = () => {
     if (upgradeNoviceAchievement) {
       const hasUpgrades = gameState.upgrades.some(u => u.currentLevel > 0);
       upgradeNoviceAchievement.progress = hasUpgrades ? 1 : 0;
-      if (hasUpgrades && !upgradeNoviceAchievement.isUnlocked) {
+      if (hasUpgrades && !upgradeNoviceAchievement.isUnlocked && !previouslyUnlockedRef.current.has('upgrade-novice')) {
         upgradeNoviceAchievement.isUnlocked = true;
         changed = true;
-        showAchievementToast(upgradeNoviceAchievement);
+        newlyUnlocked.push(upgradeNoviceAchievement);
       }
     }
 
@@ -392,10 +404,10 @@ const GameContainer = () => {
     if (automationBeginnerAchievement) {
       const hasPassiveUpgrades = gameState.upgrades.some(u => u.type === 'passive' && u.currentLevel > 0);
       automationBeginnerAchievement.progress = hasPassiveUpgrades ? 1 : 0;
-      if (hasPassiveUpgrades && !automationBeginnerAchievement.isUnlocked) {
+      if (hasPassiveUpgrades && !automationBeginnerAchievement.isUnlocked && !previouslyUnlockedRef.current.has('automation-beginner')) {
         automationBeginnerAchievement.isUnlocked = true;
         changed = true;
-        showAchievementToast(automationBeginnerAchievement);
+        newlyUnlocked.push(automationBeginnerAchievement);
       }
     }
     
@@ -404,10 +416,10 @@ const GameContainer = () => {
     if (petFriendAchievement) {
       const hasPets = gameState.pets.some(p => p.owned);
       petFriendAchievement.progress = hasPets ? 1 : 0;
-      if (hasPets && !petFriendAchievement.isUnlocked) {
+      if (hasPets && !petFriendAchievement.isUnlocked && !previouslyUnlockedRef.current.has('pet-friend')) {
         petFriendAchievement.isUnlocked = true;
         changed = true;
-        showAchievementToast(petFriendAchievement);
+        newlyUnlocked.push(petFriendAchievement);
       }
     }
     
@@ -418,10 +430,10 @@ const GameContainer = () => {
       const ownedPets = gameState.pets.filter(p => p.owned).length;
       petCollectorAchievement.progress = ownedPets;
       
-      if (totalUnlockedPets > 0 && totalUnlockedPets === ownedPets && !petCollectorAchievement.isUnlocked) {
+      if (totalUnlockedPets > 0 && totalUnlockedPets === ownedPets && !petCollectorAchievement.isUnlocked && !previouslyUnlockedRef.current.has('pet-collector')) {
         petCollectorAchievement.isUnlocked = true;
         changed = true;
-        showAchievementToast(petCollectorAchievement);
+        newlyUnlocked.push(petCollectorAchievement);
       }
     }
     
@@ -429,14 +441,22 @@ const GameContainer = () => {
     const surgeMasterAchievement = newAchievements.find(a => a.id === 'surge-master');
     if (surgeMasterAchievement) {
       surgeMasterAchievement.progress = Math.min(surgeModeActivations, 5);
-      if (surgeModeActivations >= 5 && !surgeMasterAchievement.isUnlocked) {
+      if (surgeModeActivations >= 5 && !surgeMasterAchievement.isUnlocked && !previouslyUnlockedRef.current.has('surge-master')) {
         surgeMasterAchievement.isUnlocked = true;
         changed = true;
-        showAchievementToast(surgeMasterAchievement);
+        newlyUnlocked.push(surgeMasterAchievement);
       }
     }
 
     if (changed) {
+      // Update the list of previously unlocked achievements
+      const newUnlockedIds = new Set(previouslyUnlockedRef.current);
+      newlyUnlocked.forEach(achievement => {
+        newUnlockedIds.add(achievement.id);
+        showAchievementToast(achievement);
+      });
+      previouslyUnlockedRef.current = newUnlockedIds;
+      
       setLocalAchievements(newAchievements);
       
       // Save achievements to localStorage
