@@ -1,4 +1,3 @@
-
 import { useEffect, useState, useRef, useCallback } from 'react';
 import ClickerButton from './ClickerButton';
 import UpgradeShop from './UpgradeShop';
@@ -25,6 +24,9 @@ const GameContainer = () => {
   const [mounted, setMounted] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [localAchievements, setLocalAchievements] = useState(achievements);
+  
+  // Track if this is the initial load to prevent showing achievement notifications
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
   
   // SURGE MODE states
   const [surgeMode, setSurgeMode] = useState(false);
@@ -268,8 +270,41 @@ const GameContainer = () => {
     }
   }, [gameState.lastSaved]);
 
+  // Load achievements from localStorage on mount
+  useEffect(() => {
+    const savedAchievements = localStorage.getItem('clickerGameAchievements');
+    if (savedAchievements) {
+      try {
+        const parsed = JSON.parse(savedAchievements);
+        
+        // Ensure all achievements have progress properties
+        const updatedAchievements = parsed.map((savedAchievement: any) => {
+          const baseAchievement = achievements.find(a => a.id === savedAchievement.id);
+          if (baseAchievement && baseAchievement.progressMax && savedAchievement.progress === undefined) {
+            return { 
+              ...savedAchievement, 
+              progress: savedAchievement.isUnlocked ? baseAchievement.progressMax : 0,
+              progressMax: baseAchievement.progressMax
+            };
+          }
+          return savedAchievement;
+        });
+        
+        setLocalAchievements(updatedAchievements);
+      } catch (error) {
+        console.error('Failed to parse saved achievements:', error);
+      }
+    }
+    
+    // Mark initial load as complete after loading saved achievements
+    setIsInitialLoad(false);
+  }, []);
+
   // Update achievement progress and check for unlocks
   useEffect(() => {
+    // Skip achievement checks during initial load
+    if (isInitialLoad) return;
+    
     // Check for achievements
     const newAchievements = [...localAchievements];
     let changed = false;
@@ -407,34 +442,7 @@ const GameContainer = () => {
       // Save achievements to localStorage
       localStorage.setItem('clickerGameAchievements', JSON.stringify(newAchievements));
     }
-  }, [gameState, localAchievements, surgeModeActivations]);
-  
-  // Load achievements from localStorage on mount
-  useEffect(() => {
-    const savedAchievements = localStorage.getItem('clickerGameAchievements');
-    if (savedAchievements) {
-      try {
-        const parsed = JSON.parse(savedAchievements);
-        
-        // Ensure all achievements have progress properties
-        const updatedAchievements = parsed.map((savedAchievement: any) => {
-          const baseAchievement = achievements.find(a => a.id === savedAchievement.id);
-          if (baseAchievement && baseAchievement.progressMax && savedAchievement.progress === undefined) {
-            return { 
-              ...savedAchievement, 
-              progress: savedAchievement.isUnlocked ? baseAchievement.progressMax : 0,
-              progressMax: baseAchievement.progressMax
-            };
-          }
-          return savedAchievement;
-        });
-        
-        setLocalAchievements(updatedAchievements);
-      } catch (error) {
-        console.error('Failed to parse saved achievements:', error);
-      }
-    }
-  }, []);
+  }, [gameState, localAchievements, surgeModeActivations, isInitialLoad]);
   
   const showAchievementToast = (achievement: typeof localAchievements[0]) => {
     toast({
