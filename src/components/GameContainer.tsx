@@ -1,3 +1,4 @@
+
 import { useEffect, useState, useRef, useCallback } from 'react';
 import ClickerButton from './ClickerButton';
 import UpgradeShop from './UpgradeShop';
@@ -57,7 +58,7 @@ const GameContainer = () => {
   const [konamiSequence, setKonamiSequence] = useState<string[]>([]);
   
   // Previously unlockedAchievements to track changes
-  const previouslyUnlockedRef = useRef<Set<string>>(new Set());
+  const previouslyUnlockedRef = useRef<Set<string>>(new Set<string>());
   const { calculatePetBonuses } = usePetsSystem();
 
   useEffect(() => {
@@ -305,7 +306,7 @@ const GameContainer = () => {
         setLocalAchievements(updatedAchievements);
         
         // Initialize previously unlocked achievements set
-        const unlockedIds = new Set(
+        const unlockedIds = new Set<string>(
           updatedAchievements
             .filter((a: any) => a.isUnlocked)
             .map((a: any) => a.id)
@@ -467,7 +468,7 @@ const GameContainer = () => {
 
     if (changed) {
       // Update the list of previously unlocked achievements
-      const newUnlockedIds = new Set(previouslyUnlockedRef.current);
+      const newUnlockedIds = new Set<string>(previouslyUnlockedRef.current);
       newlyUnlocked.forEach(achievement => {
         newUnlockedIds.add(achievement.id);
         showAchievementToast(achievement);
