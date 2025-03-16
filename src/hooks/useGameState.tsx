@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { toast } from "@/hooks/use-toast";
 import { GameState, Upgrade, Pet } from '@/types/gameState';
@@ -240,9 +239,9 @@ export const useGameState = () => {
     return () => clearInterval(timer);
   }, [gameState.pointsPerSecond, gameState.pointsMultiplier, gameState.pets, addPoints, calculatePetBonuses]);
   
-  // Auto-save game state every 5 seconds instead of 10
+  // Auto-save game state every 3 seconds
   useEffect(() => {
-    const saveTimer = setInterval(saveGameState, 5000); // 5 seconds
+    const saveTimer = setInterval(saveGameState, 3000); // 3 seconds
     
     return () => clearInterval(saveTimer);
   }, [saveGameState]);

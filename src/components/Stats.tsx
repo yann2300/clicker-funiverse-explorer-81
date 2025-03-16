@@ -1,7 +1,14 @@
 
 import AnimatedCounter from './AnimatedCounter';
 import { formatNumber } from '@/lib/gameUtils';
-import { MousePointer, Timer, BarChart, BadgePercent } from 'lucide-react';
+import { MousePointer, Timer, BarChart, BadgePercent, Info } from 'lucide-react';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import StatsTooltip from './StatsTooltip';
 
 interface StatsProps {
   points: number;
@@ -9,6 +16,14 @@ interface StatsProps {
   pointsPerSecond: number;
   totalClicks: number;
   totalPoints: number;
+  rawPointsPerClick: number;
+  rawPointsPerSecond: number;
+  pointsMultiplier: number;
+  surgeTimeBonus: number;
+  clickValueBoost: number;
+  passiveBoost: number;
+  surgeModeChance: number;
+  surgeMode: boolean;
 }
 
 const Stats = ({ 
@@ -16,14 +31,47 @@ const Stats = ({
   pointsPerClick, 
   pointsPerSecond, 
   totalClicks, 
-  totalPoints 
+  totalPoints,
+  rawPointsPerClick,
+  rawPointsPerSecond,
+  pointsMultiplier,
+  surgeTimeBonus,
+  clickValueBoost,
+  passiveBoost,
+  surgeModeChance,
+  surgeMode
 }: StatsProps) => {
   return (
     <div className="glass-panel rounded-2xl p-4 mb-6">
       <div className="flex flex-col space-y-4">
-        {/* Current points */}
-        <div className="flex flex-col items-center">
-          <h1 className="text-lg text-game-text-secondary font-medium">Points</h1>
+        {/* Current points with tooltip */}
+        <div className="flex flex-col items-center relative">
+          <div className="flex items-center gap-2">
+            <h1 className="text-lg text-game-text-secondary font-medium">Points</h1>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button className="text-game-text-secondary hover:text-game-accent focus:outline-none">
+                    <Info size={16} />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent className="w-80 p-0" side="right">
+                  <StatsTooltip
+                    pointsPerClick={pointsPerClick}
+                    rawPointsPerClick={rawPointsPerClick}
+                    pointsPerSecond={pointsPerSecond}
+                    rawPointsPerSecond={rawPointsPerSecond}
+                    pointsMultiplier={pointsMultiplier}
+                    surgeTimeBonus={surgeTimeBonus}
+                    clickValueBoost={clickValueBoost}
+                    passiveBoost={passiveBoost}
+                    surgeModeChance={surgeModeChance}
+                    surgeMode={surgeMode}
+                  />
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
           <span className="text-4xl font-bold tracking-tight text-game-text">
             <AnimatedCounter value={points} duration={800} />
           </span>

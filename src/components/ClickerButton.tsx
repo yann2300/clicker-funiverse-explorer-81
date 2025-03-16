@@ -6,9 +6,10 @@ interface ClickerButtonProps {
   onClick: () => void;
   pointsPerClick: number;
   surgeMode: boolean;
+  playSound?: boolean;
 }
 
-const ClickerButton = ({ onClick, pointsPerClick, surgeMode }: ClickerButtonProps) => {
+const ClickerButton = ({ onClick, pointsPerClick, surgeMode, playSound = true }: ClickerButtonProps) => {
   const [isPressed, setIsPressed] = useState(false);
   const [floatingTexts, setFloatingTexts] = useState<{ id: number; x: number; y: number; value: number }[]>([]);
   const buttonRef = useRef<HTMLButtonElement>(null);

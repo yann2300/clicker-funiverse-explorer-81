@@ -1,4 +1,3 @@
-
 import { useEffect, useState, useRef, useCallback } from 'react';
 import ClickerButton from './ClickerButton';
 import UpgradeShop from './UpgradeShop';
@@ -6,12 +5,13 @@ import Stats from './Stats';
 import useGameState from '@/hooks/useGameState';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
-import { RefreshCw, Trophy, Zap, Save } from 'lucide-react';
+import { RefreshCw, Trophy, Zap, Save, Volume2, VolumeX } from 'lucide-react';
 import AchievementsSidebar from './AchievementsSidebar';
 import { achievements } from '@/lib/achievements';
 import { toast } from "@/hooks/use-toast";
 import StatsBreakdown from './StatsBreakdown';
 import usePetsSystem from '@/hooks/usePetsSystem';
+import useSoundSettings from '@/hooks/useSoundSettings';
 
 // Konami code sequence
 const KONAMI_CODE = [
@@ -27,6 +27,7 @@ const GameContainer = () => {
   const [mounted, setMounted] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [localAchievements, setLocalAchievements] = useState(achievements);
+  const { soundEnabled, toggleSound, playClickSound } = useSoundSettings();
   
   // Track if this is the initial load to prevent showing achievement notifications
   const [isInitialLoad, setIsInitialLoad] = useState(true);
@@ -259,6 +260,11 @@ const GameContainer = () => {
   
   // Customized click handler for SURGE MODE
   const handleGameClick = () => {
+    // Play click sound if sound is enabled
+    if (soundEnabled) {
+      playClickSound();
+    }
+    
     // Check if we have a chance to trigger SURGE MODE from pets
     const petBonuses = gameState.pets.filter(p => p.owned && p.bonusType === 'surgeModeChance');
     let triggerChance = 0;
@@ -563,8 +569,17 @@ const GameContainer = () => {
         </div>
       )}
       
-      {/* Reset and Achievements buttons */}
+      {/* Reset, Achievements and Sound toggle buttons */}
       <div className="absolute top-6 right-6 z-10 flex gap-2">
+        <Button
+          variant="outline"
+          size="sm"
+          className="rounded-full p-2 h-auto"
+          onClick={toggleSound}
+          title={soundEnabled ? "Mute sounds" : "Enable sounds"}
+        >
+          {soundEnabled ? <Volume2 size={16} /> : <VolumeX size={16} />}
+        </Button>
         <Button
           variant="outline"
           size="sm"
@@ -606,13 +621,7 @@ const GameContainer = () => {
             pointsPerSecond={gameState.pointsPerSecond * (surgeMode ? 2 : 1)}
             totalClicks={gameState.totalClicks}
             totalPoints={gameState.totalPoints}
-          />
-          
-          {/* Add Stats Breakdown */}
-          <StatsBreakdown 
-            pointsPerClick={gameState.pointsPerClick * (surgeMode ? 2 : 1)}
             rawPointsPerClick={rawStats.pointsPerClick * (surgeMode ? 2 : 1)}
-            pointsPerSecond={gameState.pointsPerSecond * (surgeMode ? 2 : 1)}
             rawPointsPerSecond={rawStats.pointsPerSecond * (surgeMode ? 2 : 1)}
             pointsMultiplier={gameState.pointsMultiplier}
             surgeTimeBonus={gameState.surgeTimeBonus}
@@ -627,6 +636,7 @@ const GameContainer = () => {
               onClick={handleGameClick}
               pointsPerClick={gameState.pointsPerClick * (surgeMode ? 2 : 1)}
               surgeMode={surgeMode}
+              playSound={soundEnabled}
             />
           </div>
         </div>
