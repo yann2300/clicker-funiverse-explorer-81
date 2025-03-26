@@ -6,7 +6,7 @@ import Stats from './Stats';
 import useGameState from '@/hooks/useGameState';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
-import { RefreshCw, Trophy, Zap, Save, Volume2, VolumeX, Star } from 'lucide-react';
+import { RefreshCw, Trophy, Zap, Save, Volume2, VolumeX, Star, Puzzle } from 'lucide-react';
 import AchievementsSidebar from './AchievementsSidebar';
 import { achievements } from '@/lib/achievements';
 import { toast } from "@/hooks/use-toast";
@@ -14,6 +14,7 @@ import StatsBreakdown from './StatsBreakdown';
 import usePetsSystem from '@/hooks/usePetsSystem';
 import useSoundSettings from '@/hooks/useSoundSettings';
 import NonogramGame from './NonogramGame';
+import JigsawPuzzle from './JigsawPuzzle';
 
 // Konami code sequence
 const KONAMI_CODE = [
@@ -69,6 +70,12 @@ const GameContainer = () => {
   const [starPosition, setStarPosition] = useState({ x: 0, y: 0 });
   const [isNonogramOpen, setIsNonogramOpen] = useState(false);
   const starTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Add jigsaw puzzle states
+  const [showPuzzleIcon, setShowPuzzleIcon] = useState(false);
+  const [puzzlePosition, setPuzzlePosition] = useState({ x: 0, y: 0 });
+  const [isJigsawOpen, setIsJigsawOpen] = useState(false);
+  const puzzleTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     setMounted(true);
@@ -142,6 +149,24 @@ const GameContainer = () => {
       setShowStar(false);
     }, 10000);
   }, [showStar]);
+
+  // Show random puzzle function
+  const showRandomPuzzle = useCallback(() => {
+    // Only show if not already showing
+    if (showPuzzleIcon) return;
+    
+    // Random position within viewport (different area than star to avoid overlap)
+    const x = Math.floor(Math.random() * (window.innerWidth - 150) + 75);
+    const y = Math.floor(Math.random() * (window.innerHeight - 150) + 75);
+    
+    setPuzzlePosition({ x, y });
+    setShowPuzzleIcon(true);
+    
+    // Puzzle icon will disappear after 12 seconds if not clicked
+    puzzleTimeoutRef.current = setTimeout(() => {
+      setShowPuzzleIcon(false);
+    }, 12000);
+  }, [showPuzzleIcon]);
 
   // Check for bonus appearance every 90 seconds
   useEffect(() => {
@@ -361,12 +386,16 @@ const GameContainer = () => {
     });
   }, [gameState.pointsPerClick, gameState.pointsPerSecond]);
 
-  // Show star after 10 clicks
+  // Show star after 10 clicks and puzzle after 30 clicks
   useEffect(() => {
-    if (mounted && gameState.totalClicks === 10) {
-      showRandomStar();
+    if (mounted) {
+      if (gameState.totalClicks === 10) {
+        showRandomStar();
+      } else if (gameState.totalClicks === 30) {
+        showRandomPuzzle();
+      }
     }
-  }, [gameState.totalClicks, mounted, showRandomStar]);
+  }, [gameState.totalClicks, mounted, showRandomStar, showRandomPuzzle]);
 
   // Handle star click - open nonogram
   const handleStarClick = useCallback(() => {
@@ -380,6 +409,18 @@ const GameContainer = () => {
     setIsNonogramOpen(true);
   }, []);
   
+  // Handle puzzle click - open jigsaw
+  const handlePuzzleClick = useCallback(() => {
+    // Clear puzzle timeout if active
+    if (puzzleTimeoutRef.current) {
+      clearTimeout(puzzleTimeoutRef.current);
+      puzzleTimeoutRef.current = null;
+    }
+    
+    setShowPuzzleIcon(false);
+    setIsJigsawOpen(true);
+  }, []);
+  
   // Handle nonogram completion
   const handleNonogramSolve = useCallback(() => {
     // Add 10,000 points
@@ -387,6 +428,17 @@ const GameContainer = () => {
     
     toast({
       title: "Nonogram Solved!",
+      description: "You've earned 10,000 points!",
+    });
+  }, [handleClick]);
+
+  // Handle jigsaw completion
+  const handleJigsawSolve = useCallback(() => {
+    // Add 10,000 points
+    handleClick(100); // Give 10,000 points (100 clicks × 100 points per click)
+    
+    toast({
+      title: "Jigsaw Puzzle Solved!",
       description: "You've earned 10,000 points!",
     });
   }, [handleClick]);
@@ -609,6 +661,22 @@ const GameContainer = () => {
     };
   };
   
+  // Get puzzle styles
+  const getPuzzleStyles = () => {
+    return {
+      position: 'fixed',
+      left: `${puzzlePosition.x}px`,
+      top: `${puzzlePosition.y}px`,
+      width: '40px',
+      height: '40px',
+      zIndex: 100,
+      cursor: 'pointer',
+      color: '#4CAF50',
+      filter: 'drop-shadow(0 0 4px rgba(76, 175, 80, 0.5))',
+      animation: 'pulse-subtle 2s infinite ease-in-out'
+    };
+  };
+  
   return (
     <div className="container max-w-5xl mx-auto px-4 py-6 relative overflow-hidden">
       {/* Bonus mole */}
@@ -636,11 +704,30 @@ const GameContainer = () => {
         </div>
       )}
       
+      {/* Jigsaw puzzle icon */}
+      {showPuzzleIcon && (
+        <div 
+          onClick={handlePuzzleClick}
+          style={getPuzzleStyles() as React.CSSProperties}
+          className="animate-pulse-subtle"
+        >
+          <Puzzle size={40} fill="#4CAF50" />
+        </div>
+      )}
+      
       {/* Nonogram game */}
       <NonogramGame 
         isOpen={isNonogramOpen}
         onClose={() => setIsNonogramOpen(false)}
         onSolve={handleNonogramSolve}
+      />
+      
+      {/* Jigsaw puzzle game */}
+      <JigsawPuzzle 
+        isOpen={isJigsawOpen}
+        onClose={() => setIsJigsawOpen(false)}
+        onSolve={handleJigsawSolve}
+        imageUrl="https://picsum.photos/300/300"
       />
       
       {/* SURGE MODE timer */}
