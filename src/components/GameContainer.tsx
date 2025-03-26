@@ -583,12 +583,8 @@ const GameContainer = () => {
   
   // Handle nonogram completion
   const handleNonogramSolve = () => {
-    // Add 10,000 points
-    setGameState(prev => ({
-      ...prev,
-      points: prev.points + 10000,
-      totalPoints: prev.totalPoints + 10000
-    }));
+    // Add 10,000 points - Fix: using handleClick instead of setGameState
+    handleClick(100); // Give 10,000 points (100 clicks × 100 points per click)
     
     toast({
       title: "Nonogram Solved!",

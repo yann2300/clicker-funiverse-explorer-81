@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { QuestionMarkCircledIcon } from "@radix-ui/react-icons";
+import { QuestionMarkCircledIcon } from "lucide-react"; // Fix: use lucide-react instead of @radix-ui/react-icons
 import { 
   Tooltip,
   TooltipContent,
@@ -79,14 +79,14 @@ const Stats: React.FC<StatsProps> = ({
         <div>
           <div className="text-sm text-steamgifts-text-light">Per Click:</div>
           <div className="text-xl font-bold text-steamgifts-text tabular-nums">
-            <AnimatedCounter value={pointsPerClick} decimals={1} />
+            <AnimatedCounter value={pointsPerClick} /> {/* Fix: remove decimals prop */}
           </div>
         </div>
         
         <div>
           <div className="text-sm text-steamgifts-text-light">Per Second:</div>
           <div className="text-xl font-bold text-steamgifts-text tabular-nums">
-            <AnimatedCounter value={pointsPerSecond} decimals={1} />
+            <AnimatedCounter value={pointsPerSecond} /> {/* Fix: remove decimals prop */}
           </div>
         </div>
         
