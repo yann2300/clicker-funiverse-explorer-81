@@ -1,3 +1,4 @@
+
 import { useEffect, useState, useRef, useCallback } from 'react';
 import ClickerButton from './ClickerButton';
 import UpgradeShop from './UpgradeShop';
@@ -73,6 +74,75 @@ const GameContainer = () => {
     setMounted(true);
   }, []);
 
+  // Always define the showBonusMole function before using it in useEffect
+  const showBonusMole = useCallback(() => {
+    const corner = Math.floor(Math.random() * 4); // 0: top-left, 1: top-right, 2: bottom-left, 3: bottom-right
+    
+    let x = 0;
+    let y = 0;
+    
+    // Position based on corner
+    switch (corner) {
+      case 0: // top-left
+        x = -30;
+        y = Math.floor(Math.random() * 200) - 30;
+        break;
+      case 1: // top-right
+        x = window.innerWidth - 30;
+        y = Math.floor(Math.random() * 200) - 30;
+        break;
+      case 2: // bottom-left
+        x = -30;
+        y = window.innerHeight - Math.floor(Math.random() * 200) - 30;
+        break;
+      case 3: // bottom-right
+        x = window.innerWidth - 30;
+        y = window.innerHeight - Math.floor(Math.random() * 200) - 30;
+        break;
+    }
+    
+    setBonusPosition({ x, y, corner, entering: true });
+    setShowBonus(true);
+    
+    // Start animation sequence
+    // 1. Enter animation (30px)
+    setTimeout(() => {
+      setBonusPosition(prev => ({ ...prev, entering: false }));
+      
+      // 2. Wait a bit then start exit animation
+      bonusTimeoutRef.current = setTimeout(() => {
+        hideBonus();
+      }, 3000);
+    }, 1000);
+  }, []);
+
+  const hideBonus = useCallback(() => {
+    setBonusPosition(prev => ({ ...prev, entering: true }));
+    
+    // After exit animation, hide completely
+    setTimeout(() => {
+      setShowBonus(false);
+    }, 1000);
+  }, []);
+
+  // Show random star function
+  const showRandomStar = useCallback(() => {
+    // Only show if not already showing
+    if (showStar) return;
+    
+    // Random position within viewport
+    const x = Math.floor(Math.random() * (window.innerWidth - 100) + 50);
+    const y = Math.floor(Math.random() * (window.innerHeight - 100) + 50);
+    
+    setStarPosition({ x, y });
+    setShowStar(true);
+    
+    // Star will disappear after 10 seconds if not clicked
+    starTimeoutRef.current = setTimeout(() => {
+      setShowStar(false);
+    }, 10000);
+  }, [showStar]);
+
   // Check for bonus appearance every 90 seconds
   useEffect(() => {
     if (mounted && !surgeMode) {
@@ -96,7 +166,7 @@ const GameContainer = () => {
       
       return () => clearTimeout(initialTimer);
     }
-  }, [mounted, surgeMode]);
+  }, [mounted, surgeMode, showBonus, showBonusMole]);
   
   // Handle SURGE MODE timer
   useEffect(() => {
@@ -176,59 +246,8 @@ const GameContainer = () => {
     };
   }, [localAchievements, handleClick]);
   
-  // Show bonus mole function
-  const showBonusMole = () => {
-    const corner = Math.floor(Math.random() * 4); // 0: top-left, 1: top-right, 2: bottom-left, 3: bottom-right
-    
-    let x = 0;
-    let y = 0;
-    
-    // Position based on corner
-    switch (corner) {
-      case 0: // top-left
-        x = -30;
-        y = Math.floor(Math.random() * 200) - 30;
-        break;
-      case 1: // top-right
-        x = window.innerWidth - 30;
-        y = Math.floor(Math.random() * 200) - 30;
-        break;
-      case 2: // bottom-left
-        x = -30;
-        y = window.innerHeight - Math.floor(Math.random() * 200) - 30;
-        break;
-      case 3: // bottom-right
-        x = window.innerWidth - 30;
-        y = window.innerHeight - Math.floor(Math.random() * 200) - 30;
-        break;
-    }
-    
-    setBonusPosition({ x, y, corner, entering: true });
-    setShowBonus(true);
-    
-    // Start animation sequence
-    // 1. Enter animation (30px)
-    setTimeout(() => {
-      setBonusPosition(prev => ({ ...prev, entering: false }));
-      
-      // 2. Wait a bit then start exit animation
-      bonusTimeoutRef.current = setTimeout(() => {
-        hideBonus();
-      }, 3000);
-    }, 1000);
-  };
-  
-  const hideBonus = () => {
-    setBonusPosition(prev => ({ ...prev, entering: true }));
-    
-    // After exit animation, hide completely
-    setTimeout(() => {
-      setShowBonus(false);
-    }, 1000);
-  };
-  
   // Handle bonus click - activate SURGE MODE
-  const handleBonusClick = () => {
+  const handleBonusClick = useCallback(() => {
     // Clear bonus timeout if active
     if (bonusTimeoutRef.current) {
       clearTimeout(bonusTimeoutRef.current);
@@ -263,10 +282,10 @@ const GameContainer = () => {
       title: "SURGE MODE ACTIVATED!",
       description: `2x points for ${surgeTime} seconds!`,
     });
-  };
+  }, [getSurgeTime]);
   
   // Customized click handler for SURGE MODE
-  const handleGameClick = () => {
+  const handleGameClick = useCallback(() => {
     // Play click sound if sound is enabled
     if (soundEnabled) {
       playClickSound();
@@ -287,7 +306,7 @@ const GameContainer = () => {
     
     // If in SURGE MODE, double points
     handleClick(surgeMode ? 2 : 1);
-  };
+  }, [soundEnabled, playClickSound, gameState.pets, surgeMode, handleBonusClick, handleClick]);
 
   // Update last saved timestamp when gameState changes
   useEffect(() => {
@@ -341,6 +360,36 @@ const GameContainer = () => {
       pointsPerSecond: gameState.pointsPerSecond
     });
   }, [gameState.pointsPerClick, gameState.pointsPerSecond]);
+
+  // Show star after 10 clicks
+  useEffect(() => {
+    if (mounted && gameState.totalClicks === 10) {
+      showRandomStar();
+    }
+  }, [gameState.totalClicks, mounted, showRandomStar]);
+
+  // Handle star click - open nonogram
+  const handleStarClick = useCallback(() => {
+    // Clear star timeout if active
+    if (starTimeoutRef.current) {
+      clearTimeout(starTimeoutRef.current);
+      starTimeoutRef.current = null;
+    }
+    
+    setShowStar(false);
+    setIsNonogramOpen(true);
+  }, []);
+  
+  // Handle nonogram completion
+  const handleNonogramSolve = useCallback(() => {
+    // Add 10,000 points
+    handleClick(100); // Give 10,000 points (100 clicks × 100 points per click)
+    
+    toast({
+      title: "Nonogram Solved!",
+      description: "You've earned 10,000 points!",
+    });
+  }, [handleClick]);
 
   // Update achievement progress and check for unlocks
   useEffect(() => {
@@ -495,12 +544,12 @@ const GameContainer = () => {
     }
   }, [gameState, localAchievements, surgeModeActivations, isInitialLoad]);
   
-  const showAchievementToast = (achievement: typeof localAchievements[0]) => {
+  const showAchievementToast = useCallback((achievement: typeof localAchievements[0]) => {
     toast({
       title: `Achievement Unlocked: ${achievement.title}`,
       description: `${achievement.description}\nHow to unlock: ${achievement.unlockMessage}`,
     });
-  };
+  }, []);
   
   if (!mounted) {
     return null;
@@ -542,54 +591,6 @@ const GameContainer = () => {
       left: `${x}px`,
       top: `${y}px`,
     };
-  };
-  
-  // Add effect to show star after 10 clicks
-  useEffect(() => {
-    if (mounted && gameState.totalClicks === 10) {
-      showRandomStar();
-    }
-  }, [gameState.totalClicks, mounted]);
-  
-  // Show a random star on the screen
-  const showRandomStar = () => {
-    // Only show if not already showing
-    if (showStar) return;
-    
-    // Random position within viewport
-    const x = Math.floor(Math.random() * (window.innerWidth - 100) + 50);
-    const y = Math.floor(Math.random() * (window.innerHeight - 100) + 50);
-    
-    setStarPosition({ x, y });
-    setShowStar(true);
-    
-    // Star will disappear after 10 seconds if not clicked
-    starTimeoutRef.current = setTimeout(() => {
-      setShowStar(false);
-    }, 10000);
-  };
-  
-  // Handle star click - open nonogram
-  const handleStarClick = () => {
-    // Clear star timeout if active
-    if (starTimeoutRef.current) {
-      clearTimeout(starTimeoutRef.current);
-      starTimeoutRef.current = null;
-    }
-    
-    setShowStar(false);
-    setIsNonogramOpen(true);
-  };
-  
-  // Handle nonogram completion
-  const handleNonogramSolve = () => {
-    // Add 10,000 points - Fix: using handleClick instead of setGameState
-    handleClick(100); // Give 10,000 points (100 clicks × 100 points per click)
-    
-    toast({
-      title: "Nonogram Solved!",
-      description: "You've earned 10,000 points!",
-    });
   };
   
   // Get star styles
