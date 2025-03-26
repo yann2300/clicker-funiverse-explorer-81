@@ -5,13 +5,14 @@ import Stats from './Stats';
 import useGameState from '@/hooks/useGameState';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
-import { RefreshCw, Trophy, Zap, Save, Volume2, VolumeX } from 'lucide-react';
+import { RefreshCw, Trophy, Zap, Save, Volume2, VolumeX, Star } from 'lucide-react';
 import AchievementsSidebar from './AchievementsSidebar';
 import { achievements } from '@/lib/achievements';
 import { toast } from "@/hooks/use-toast";
 import StatsBreakdown from './StatsBreakdown';
 import usePetsSystem from '@/hooks/usePetsSystem';
 import useSoundSettings from '@/hooks/useSoundSettings';
+import NonogramGame from './NonogramGame';
 
 // Konami code sequence
 const KONAMI_CODE = [
@@ -61,6 +62,12 @@ const GameContainer = () => {
   // Previously unlockedAchievements to track changes
   const previouslyUnlockedRef = useRef<Set<string>>(new Set<string>());
   const { calculatePetBonuses } = usePetsSystem();
+
+  // Add nonogram star states
+  const [showStar, setShowStar] = useState(false);
+  const [starPosition, setStarPosition] = useState({ x: 0, y: 0 });
+  const [isNonogramOpen, setIsNonogramOpen] = useState(false);
+  const starTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     setMounted(true);
@@ -537,6 +544,74 @@ const GameContainer = () => {
     };
   };
   
+  // Add effect to show star after 10 clicks
+  useEffect(() => {
+    if (mounted && gameState.totalClicks === 10) {
+      showRandomStar();
+    }
+  }, [gameState.totalClicks, mounted]);
+  
+  // Show a random star on the screen
+  const showRandomStar = () => {
+    // Only show if not already showing
+    if (showStar) return;
+    
+    // Random position within viewport
+    const x = Math.floor(Math.random() * (window.innerWidth - 100) + 50);
+    const y = Math.floor(Math.random() * (window.innerHeight - 100) + 50);
+    
+    setStarPosition({ x, y });
+    setShowStar(true);
+    
+    // Star will disappear after 10 seconds if not clicked
+    starTimeoutRef.current = setTimeout(() => {
+      setShowStar(false);
+    }, 10000);
+  };
+  
+  // Handle star click - open nonogram
+  const handleStarClick = () => {
+    // Clear star timeout if active
+    if (starTimeoutRef.current) {
+      clearTimeout(starTimeoutRef.current);
+      starTimeoutRef.current = null;
+    }
+    
+    setShowStar(false);
+    setIsNonogramOpen(true);
+  };
+  
+  // Handle nonogram completion
+  const handleNonogramSolve = () => {
+    // Add 10,000 points
+    setGameState(prev => ({
+      ...prev,
+      points: prev.points + 10000,
+      totalPoints: prev.totalPoints + 10000
+    }));
+    
+    toast({
+      title: "Nonogram Solved!",
+      description: "You've earned 10,000 points!",
+    });
+  };
+  
+  // Get star styles
+  const getStarStyles = () => {
+    return {
+      position: 'fixed',
+      left: `${starPosition.x}px`,
+      top: `${starPosition.y}px`,
+      width: '40px',
+      height: '40px',
+      zIndex: 100,
+      cursor: 'pointer',
+      color: '#FFD700',
+      filter: 'drop-shadow(0 0 4px rgba(255, 215, 0, 0.5))',
+      animation: 'pulse-subtle 2s infinite ease-in-out'
+    };
+  };
+  
   return (
     <div className="container max-w-5xl mx-auto px-4 py-6 relative overflow-hidden">
       {/* Bonus mole */}
@@ -552,6 +627,24 @@ const GameContainer = () => {
           />
         </div>
       )}
+      
+      {/* Nonogram star */}
+      {showStar && (
+        <div 
+          onClick={handleStarClick}
+          style={getStarStyles() as React.CSSProperties}
+          className="animate-pulse-subtle"
+        >
+          <Star size={40} fill="#FFD700" />
+        </div>
+      )}
+      
+      {/* Nonogram game */}
+      <NonogramGame 
+        isOpen={isNonogramOpen}
+        onClose={() => setIsNonogramOpen(false)}
+        onSolve={handleNonogramSolve}
+      />
       
       {/* SURGE MODE timer */}
       {surgeMode && (
