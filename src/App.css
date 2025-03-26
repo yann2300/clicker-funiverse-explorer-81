@@ -1,7 +1,7 @@
+
 #root {
   max-width: 1280px;
   margin: 0 auto;
-  padding: 2rem;
   text-align: center;
 }
 
@@ -12,10 +12,10 @@
   transition: filter 300ms;
 }
 .logo:hover {
-  filter: drop-shadow(0 0 2em #646cffaa);
+  filter: drop-shadow(0 0 2em #77c940aa);
 }
 .logo.react:hover {
-  filter: drop-shadow(0 0 2em #61dafbaa);
+  filter: drop-shadow(0 0 2em #4e8ad2aa);
 }
 
 @keyframes logo-spin {
@@ -38,5 +38,36 @@
 }
 
 .read-the-docs {
-  color: #888;
+  color: #828282;
+}
+
+/* SteamGifts specific styles */
+.sg-header-button {
+  background-color: #77c940;
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 2px;
+  transition: background-color 0.2s;
+}
+
+.sg-header-button:hover {
+  background-color: #5c9832;
+}
+
+.sg-link {
+  color: #4e8ad2;
+  text-decoration: none;
+}
+
+.sg-link:hover {
+  text-decoration: underline;
+}
+
+.sg-nav-link {
+  color: #546f93;
+  transition: color 0.2s;
+}
+
+.sg-nav-link:hover {
+  color: white;
 }

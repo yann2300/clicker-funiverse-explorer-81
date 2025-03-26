@@ -67,15 +67,31 @@ export default {
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
 				},
-				// Game specific colors
+				// SteamGifts color theme
+				steamgifts: {
+					'header': '#1b2838',
+					'header-dark': '#171d25',
+					'body': '#f1f1f1',
+					'card': '#ffffff',
+					'primary': '#77c940',
+					'primary-hover': '#5c9832',
+					'primary-light': '#c1e39e',
+					'text': '#4b4b4b',
+					'text-light': '#828282',
+					'link': '#4e8ad2',
+					'border': '#e4e4e4',
+					'highlight': '#f5f5f5',
+					'navigation': '#546f93',
+				},
+				// Game specific colors - updated to match SteamGifts
 				game: {
-					'accent': '#0070F3',
-					'accent-light': '#3291FF',
-					'accent-dark': '#0050CF',
-					'neutral': '#F5F5F7',
-					'neutral-dark': '#e5e5e7',
-					'text': '#1D1D1F',
-					'text-secondary': '#6E6E73',
+					'accent': '#4e8ad2',
+					'accent-light': '#77a7e6',
+					'accent-dark': '#3a6aa3',
+					'neutral': '#f1f1f1',
+					'neutral-dark': '#e4e4e4',
+					'text': '#4b4b4b',
+					'text-secondary': '#828282',
 				}
 			},
 			borderRadius: {

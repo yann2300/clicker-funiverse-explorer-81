@@ -1,48 +1,47 @@
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 0 0% 12%;
+    --background: 0 0% 95%;
+    --foreground: 0 0% 29%;
 
     --card: 0 0% 100%;
-    --card-foreground: 0 0% 12%;
+    --card-foreground: 0 0% 29%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 12%;
+    --popover-foreground: 0 0% 29%;
 
-    --primary: 210 100% 50%;
+    --primary: 100 53% 52%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 210 42% 45%;
+    --secondary-foreground: 0 0% 100%;
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    --muted: 0 0% 96%;
+    --muted-foreground: 0 0% 51%;
 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    --accent: 210 42% 45%;
+    --accent-foreground: 0 0% 100%;
 
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    --border: 0 0% 89%;
+    --input: 0 0% 89%;
+    --ring: 0 0% 29%;
 
-    --radius: 1rem;
+    --radius: 0.375rem;
 
-    --sidebar-background: 0 0% 98%;
-    --sidebar-foreground: 240 5.3% 26.1%;
-    --sidebar-primary: 240 5.9% 10%;
-    --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 240 4.8% 95.9%;
-    --sidebar-accent-foreground: 240 5.9% 10%;
-    --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --sidebar-background: 212 27% 16%;
+    --sidebar-foreground: 0 0% 95%;
+    --sidebar-primary: 100 53% 52%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 210 42% 45%;
+    --sidebar-accent-foreground: 0 0% 95%;
+    --sidebar-border: 214 33% 32%;
+    --sidebar-ring: 210 42% 45%;
   }
 
   .dark {
@@ -91,7 +90,7 @@
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-steamgifts-body text-steamgifts-text;
     font-feature-settings: "rlig" 1, "calt" 1;
   }
   
@@ -106,22 +105,35 @@
   }
   
   ::-webkit-scrollbar-thumb {
-    @apply bg-game-text-secondary/30 rounded-full;
+    @apply bg-steamgifts-text-light/30 rounded-full;
   }
   
   ::-webkit-scrollbar-thumb:hover {
-    @apply bg-game-text-secondary/50;
+    @apply bg-steamgifts-text-light/50;
   }
 }
 
 @layer components {
   .glass-panel {
-    @apply bg-white/80 backdrop-blur-xl border border-white/20 shadow-sm;
+    @apply bg-steamgifts-card border border-steamgifts-border shadow-sm;
   }
   
   .glass-button {
-    @apply bg-white/90 backdrop-blur-xl hover:bg-white/100 border border-white/20 shadow-sm
+    @apply bg-white hover:bg-steamgifts-highlight border border-steamgifts-border shadow-sm
     transition-all duration-200 ease-out active:scale-95;
+  }
+  
+  .steamgifts-button {
+    @apply bg-steamgifts-primary text-white hover:bg-steamgifts-primary-hover px-4 py-2 
+    rounded transition-all duration-200 ease-out active:scale-95;
+  }
+  
+  .steamgifts-header {
+    @apply bg-steamgifts-header text-white;
+  }
+  
+  .steamgifts-card {
+    @apply bg-steamgifts-card border border-steamgifts-border rounded-md shadow-sm;
   }
   
   .noise-bg {

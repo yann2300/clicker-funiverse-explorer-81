@@ -42,16 +42,16 @@ const Stats = ({
   surgeMode
 }: StatsProps) => {
   return (
-    <div className="glass-panel rounded-2xl p-4 mb-6">
+    <div className="steamgifts-card p-4 mb-6">
       <div className="flex flex-col space-y-4">
         {/* Current points with tooltip */}
         <div className="flex flex-col items-center relative">
           <div className="flex items-center gap-2">
-            <h1 className="text-lg text-game-text-secondary font-medium">Points</h1>
+            <h1 className="text-lg text-steamgifts-text-light font-medium">Points</h1>
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <button className="text-game-text-secondary hover:text-game-accent focus:outline-none">
+                  <button className="text-steamgifts-text-light hover:text-steamgifts-link focus:outline-none">
                     <Info size={16} />
                   </button>
                 </TooltipTrigger>
@@ -72,58 +72,58 @@ const Stats = ({
               </Tooltip>
             </TooltipProvider>
           </div>
-          <span className="text-4xl font-bold tracking-tight text-game-text">
+          <span className="text-4xl font-bold tracking-tight text-steamgifts-text">
             <AnimatedCounter value={points} duration={800} />
           </span>
         </div>
         
         {/* Stats row */}
-        <div className="grid grid-cols-2 gap-4 pt-2 border-t border-game-neutral-dark/30">
+        <div className="grid grid-cols-2 gap-4 pt-2 border-t border-steamgifts-border">
           {/* Points per click */}
           <div className="flex flex-col items-center">
-            <div className="flex items-center text-game-text mb-1">
-              <MousePointer size={16} className="mr-1 text-game-accent" />
+            <div className="flex items-center text-steamgifts-text mb-1">
+              <MousePointer size={16} className="mr-1 text-steamgifts-link" />
               <span className="text-sm">Per Click</span>
-              {pointsPerClick > 1 && <BadgePercent size={12} className="ml-1 text-blue-500" />}
+              {pointsPerClick > 1 && <BadgePercent size={12} className="ml-1 text-steamgifts-link" />}
             </div>
-            <span className="text-xl font-semibold tracking-tight text-game-text">
+            <span className="text-xl font-semibold tracking-tight text-steamgifts-text">
               <AnimatedCounter value={pointsPerClick} duration={800} />
             </span>
           </div>
           
           {/* Points per second */}
           <div className="flex flex-col items-center">
-            <div className="flex items-center text-game-text mb-1">
-              <Timer size={16} className="mr-1 text-amber-500" />
+            <div className="flex items-center text-steamgifts-text mb-1">
+              <Timer size={16} className="mr-1 text-steamgifts-primary" />
               <span className="text-sm">Per Second</span>
-              {pointsPerSecond > 0 && <BadgePercent size={12} className="ml-1 text-blue-500" />}
+              {pointsPerSecond > 0 && <BadgePercent size={12} className="ml-1 text-steamgifts-link" />}
             </div>
-            <span className="text-xl font-semibold tracking-tight text-game-text">
+            <span className="text-xl font-semibold tracking-tight text-steamgifts-text">
               <AnimatedCounter value={pointsPerSecond} duration={800} />
             </span>
           </div>
         </div>
         
         {/* Additional stats */}
-        <div className="grid grid-cols-2 gap-4 pt-2 border-t border-game-neutral-dark/30">
+        <div className="grid grid-cols-2 gap-4 pt-2 border-t border-steamgifts-border">
           {/* Total clicks */}
           <div className="flex flex-col items-center">
-            <div className="flex items-center text-game-text-secondary mb-1">
+            <div className="flex items-center text-steamgifts-text-light mb-1">
               <MousePointer size={14} className="mr-1" />
               <span className="text-xs">Total Clicks</span>
             </div>
-            <span className="text-base font-medium text-game-text">
+            <span className="text-base font-medium text-steamgifts-text">
               {formatNumber(totalClicks)}
             </span>
           </div>
           
           {/* All time points */}
           <div className="flex flex-col items-center">
-            <div className="flex items-center text-game-text-secondary mb-1">
+            <div className="flex items-center text-steamgifts-text-light mb-1">
               <BarChart size={14} className="mr-1" />
               <span className="text-xs">All-time Points</span>
             </div>
-            <span className="text-base font-medium text-game-text">
+            <span className="text-base font-medium text-steamgifts-text">
               {formatNumber(totalPoints)}
             </span>
           </div>
