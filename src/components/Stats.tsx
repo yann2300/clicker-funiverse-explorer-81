@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { QuestionMarkCircledIcon } from "lucide-react"; // Fix: use lucide-react instead of @radix-ui/react-icons
+import { HelpCircle } from "lucide-react"; // Replace QuestionMarkCircledIcon with HelpCircle
 import { 
   Tooltip,
   TooltipContent,
@@ -49,7 +49,7 @@ const Stats: React.FC<StatsProps> = ({
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
-                <QuestionMarkCircledIcon className="w-4 h-4 text-steamgifts-text-light cursor-help" />
+                <HelpCircle className="w-4 h-4 text-steamgifts-text-light cursor-help" />
               </TooltipTrigger>
               <TooltipContent side="right" className="p-0 bg-white">
                 <StatsBreakdown 
