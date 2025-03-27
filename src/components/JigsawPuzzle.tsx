@@ -2,7 +2,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Puzzle } from 'lucide-react';
-import { Canvas, IEvent } from 'fabric/fabric-impl';
 import { fabric } from 'fabric';
 
 interface JigsawPuzzleProps {
@@ -30,7 +29,7 @@ const JigsawPuzzle = ({
   const [pieces, setPieces] = useState<JigsawPiece[]>([]);
   const [solved, setSolved] = useState(false);
   const [loaded, setLoaded] = useState(false);
-  const [canvas, setCanvas] = useState<Canvas | null>(null);
+  const [canvas, setCanvas] = useState<fabric.Canvas | null>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const puzzleSize = 300;
   const gridSize = 3;
@@ -173,7 +172,7 @@ const JigsawPuzzle = ({
   }, [isOpen, canvas]);
 
   // Handle piece moving
-  const handlePieceMoving = (e: IEvent<MouseEvent>) => {
+  const handlePieceMoving = (e: fabric.IEvent) => {
     if (!e.target) return;
     
     const movingPiece = pieces.find(
