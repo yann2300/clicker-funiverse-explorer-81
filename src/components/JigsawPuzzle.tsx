@@ -30,11 +30,29 @@ const JigsawPuzzle = ({
   const [solved, setSolved] = useState(false);
   const [loaded, setLoaded] = useState(false);
   const [canvas, setCanvas] = useState<fabric.Canvas | null>(null);
+  const [image, setImage] = useState<HTMLImageElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const puzzleSize = 300;
   const gridSize = 3;
   const pieceSize = puzzleSize / gridSize;
   const snapThreshold = 20; // Distance in pixels for snapping
+
+  // Preload the image when component mounts
+  useEffect(() => {
+    if (isOpen) {
+      const img = new Image();
+      img.crossOrigin = "anonymous";
+      img.src = imageUrl;
+      img.onload = () => {
+        setImage(img);
+      };
+      img.onerror = (e) => {
+        console.error('Failed to load puzzle image:', e);
+      };
+    } else {
+      setImage(null);
+    }
+  }, [isOpen, imageUrl]);
 
   // Initialize fabric canvas
   useEffect(() => {
@@ -56,105 +74,119 @@ const JigsawPuzzle = ({
     }
   }, [isOpen, canvas]);
 
-  // Create jigsaw pieces
+  // Create jigsaw pieces once image and canvas are ready
   useEffect(() => {
-    if (isOpen && canvas && !loaded) {
+    if (isOpen && canvas && image && !loaded) {
       // Clear any existing pieces
       canvas.clear();
       setPieces([]);
       
-      // Load the image
-      fabric.Image.fromURL(imageUrl, (img) => {
-        // Scale image to fit puzzle size
-        const scale = puzzleSize / Math.max(img.width || 1, img.height || 1);
-        img.scale(scale);
-        
-        // Center the image if needed
-        const imgWidth = (img.width || 0) * scale;
-        const imgHeight = (img.height || 0) * scale;
-        const offsetX = (puzzleSize - imgWidth) / 2;
-        const offsetY = (puzzleSize - imgHeight) / 2;
-        
-        const newPieces: JigsawPiece[] = [];
-        
-        // Create jigsaw pieces (3x3 grid)
-        for (let row = 0; row < gridSize; row++) {
-          for (let col = 0; col < gridSize; col++) {
-            const id = row * gridSize + col;
+      // Calculate scale to fit image within puzzle size
+      const scale = Math.min(
+        puzzleSize / image.width,
+        puzzleSize / image.height
+      );
+      
+      // Center the image
+      const scaledWidth = image.width * scale;
+      const scaledHeight = image.height * scale;
+      const offsetX = (puzzleSize - scaledWidth) / 2;
+      const offsetY = (puzzleSize - scaledHeight) / 2;
+      
+      const newPieces: JigsawPiece[] = [];
+      
+      // Create the jigsaw pieces (3x3 grid)
+      for (let row = 0; row < gridSize; row++) {
+        for (let col = 0; col < gridSize; col++) {
+          const id = row * gridSize + col;
+          
+          // Calculate clip position
+          const clipX = (col * (image.width / gridSize));
+          const clipY = (row * (image.height / gridSize));
+          const clipWidth = image.width / gridSize;
+          const clipHeight = image.height / gridSize;
+          
+          // Create a temporary canvas to hold the piece image
+          const tempCanvas = document.createElement('canvas');
+          tempCanvas.width = clipWidth;
+          tempCanvas.height = clipHeight;
+          const tempCtx = tempCanvas.getContext('2d');
+          
+          if (tempCtx) {
+            // Draw the portion of the image onto the temporary canvas
+            tempCtx.drawImage(
+              image,
+              clipX, clipY, clipWidth, clipHeight,
+              0, 0, clipWidth, clipHeight
+            );
             
-            // Calculate position to clip from original image
-            const clipX = (col * pieceSize);
-            const clipY = (row * pieceSize);
-            
-            // Create a pattern with the image portion
-            const patternImg = new Image();
-            patternImg.src = imageUrl;
-            
-            // Create piece with curved/jigsaw edges
-            const piece = new fabric.Rect({
-              width: pieceSize,
-              height: pieceSize,
-              left: Math.random() * (puzzleSize - pieceSize),
-              top: Math.random() * (puzzleSize - pieceSize),
-              fill: new fabric.Pattern({
-                source: patternImg,
-                repeat: 'no-repeat',
-                offsetX: -clipX,
-                offsetY: -clipY,
-                patternTransform: [
-                  scale, 0, 0, 
-                  scale, 
-                  offsetX, offsetY
-                ]
-              }),
-              rx: 10, // rounded corners to simulate jigsaw pieces
-              ry: 10,
-              strokeWidth: 2,
-              stroke: '#666',
-              shadow: new fabric.Shadow({
-                color: 'rgba(0,0,0,0.3)',
-                blur: 5,
-                offsetX: 2,
-                offsetY: 2
-              }),
-              originX: 'left',
-              originY: 'top',
-              hasControls: false,
-              hasBorders: false,
-              lockRotation: true,
-              lockScalingX: true,
-              lockScalingY: true
+            // Create a fabric image from the temp canvas
+            fabric.Image.fromURL(tempCanvas.toDataURL(), (fabricImg) => {
+              // Scale image to fit piece size
+              fabricImg.scale(pieceSize / clipWidth);
+              
+              // Calculate correct position on grid
+              const correctLeft = col * pieceSize;
+              const correctTop = row * pieceSize;
+              
+              // Random initial position (but avoid edges)
+              const randomLeft = Math.random() * (puzzleSize - pieceSize - 20) + 10;
+              const randomTop = Math.random() * (puzzleSize - pieceSize - 20) + 10;
+              
+              // Configure the piece
+              fabricImg.set({
+                left: randomLeft,
+                top: randomTop,
+                originX: 'left',
+                originY: 'top',
+                hasControls: false,
+                hasBorders: false,
+                lockRotation: true,
+                lockScalingX: true,
+                lockScalingY: true,
+                cornerSize: 10,
+                transparentCorners: false,
+                stroke: '#666',
+                strokeWidth: 2,
+                shadow: new fabric.Shadow({
+                  color: 'rgba(0,0,0,0.3)',
+                  blur: 5,
+                  offsetX: 2,
+                  offsetY: 2
+                })
+              });
+              
+              // Create and store piece data
+              const piece: JigsawPiece = {
+                id,
+                fabricObject: fabricImg,
+                correctPosition: { left: correctLeft, top: correctTop },
+                currentPosition: { left: randomLeft, top: randomTop },
+                row,
+                col
+              };
+              
+              newPieces.push(piece);
+              
+              // Add piece to canvas
+              canvas.add(fabricImg);
+              
+              // Once all pieces are created, set up the pieces state and event handlers
+              if (newPieces.length === gridSize * gridSize) {
+                setPieces(newPieces);
+                setLoaded(true);
+                setSolved(false);
+                
+                // Set up drag and drop handlers
+                canvas.on('object:moving', handlePieceMoving);
+                canvas.on('object:modified', checkSolution);
+              }
             });
-            
-            // Calculate correct position on the grid
-            const correctLeft = col * pieceSize;
-            const correctTop = row * pieceSize;
-            
-            // Create and store piece data
-            newPieces.push({
-              id,
-              fabricObject: piece,
-              correctPosition: { left: correctLeft, top: correctTop },
-              currentPosition: { left: piece.left || 0, top: piece.top || 0 },
-              row,
-              col
-            });
-            
-            // Add to canvas
-            canvas.add(piece);
           }
         }
-        
-        setPieces(newPieces);
-        setLoaded(true);
-        setSolved(false);
-        
-        // Set up drag and drop
-        canvas.on('object:moving', handlePieceMoving);
-        canvas.on('object:modified', checkSolution);
-      });
+      }
     }
-  }, [isOpen, canvas, loaded, imageUrl, pieceSize, gridSize, puzzleSize]);
+  }, [isOpen, canvas, loaded, imageUrl, image, pieceSize, gridSize, puzzleSize]);
 
   // Reset when closed
   useEffect(() => {
