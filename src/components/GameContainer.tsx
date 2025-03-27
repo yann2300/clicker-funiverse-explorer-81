@@ -7,7 +7,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Button } from "@/components/ui/button";
 import { RefreshCw, Trophy, Zap, Save, Volume2, VolumeX, Star, Puzzle } from 'lucide-react';
 import AchievementsSidebar from './AchievementsSidebar';
-import { achievements } from '@/lib/achievements';
+import { achievements, Achievement } from '@/lib/achievements';
 import { toast } from "@/hooks/use-toast";
 import StatsBreakdown from './StatsBreakdown';
 import usePetsSystem from '@/hooks/usePetsSystem';
@@ -82,6 +82,14 @@ const GameContainer = () => {
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  // Function to show achievement toast notification when an achievement is unlocked
+  const showAchievementToast = (achievement: Achievement) => {
+    toast({
+      title: "🏆 Achievement Unlocked!",
+      description: achievement.title + ": " + achievement.description,
+    });
+  };
 
   // Always define the showBonusMole function before using it in useEffect
   const showBonusMole = useCallback(() => {
@@ -271,7 +279,7 @@ const GameContainer = () => {
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [localAchievements, handleClick]);
+  }, [localAchievements, handleClick, showAchievementToast]);
   
   // Handle bonus click - activate SURGE MODE
   const handleBonusClick = useCallback(() => {
