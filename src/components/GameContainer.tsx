@@ -1,3 +1,4 @@
+
 import { useEffect, useState, useRef, useCallback } from 'react';
 import ClickerButton from './ClickerButton';
 import UpgradeShop from './UpgradeShop';
@@ -7,7 +8,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Button } from "@/components/ui/button";
 import { RefreshCw, Trophy, Zap, Save, Volume2, VolumeX, Star, Puzzle } from 'lucide-react';
 import AchievementsSidebar from './AchievementsSidebar';
-import { achievements, Achievement } from '@/lib/achievements';
+import { achievements } from '@/lib/achievements';
 import { toast } from "@/hooks/use-toast";
 import StatsBreakdown from './StatsBreakdown';
 import usePetsSystem from '@/hooks/usePetsSystem';
@@ -76,20 +77,9 @@ const GameContainer = () => {
   const [isJigsawOpen, setIsJigsawOpen] = useState(false);
   const puzzleTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  const [starClaimed, setStarClaimed] = useState(false);
-  const [puzzleClaimed, setPuzzleClaimed] = useState(false);
-
   useEffect(() => {
     setMounted(true);
   }, []);
-
-  // Function to show achievement toast notification when an achievement is unlocked
-  const showAchievementToast = (achievement: Achievement) => {
-    toast({
-      title: "🏆 Achievement Unlocked!",
-      description: achievement.title + ": " + achievement.description,
-    });
-  };
 
   // Always define the showBonusMole function before using it in useEffect
   const showBonusMole = useCallback(() => {
@@ -144,8 +134,8 @@ const GameContainer = () => {
 
   // Show random star function
   const showRandomStar = useCallback(() => {
-    // Only show if not already showing and not claimed
-    if (showStar || starClaimed) return;
+    // Only show if not already showing
+    if (showStar) return;
     
     // Random position within viewport
     const x = Math.floor(Math.random() * (window.innerWidth - 100) + 50);
@@ -158,12 +148,12 @@ const GameContainer = () => {
     starTimeoutRef.current = setTimeout(() => {
       setShowStar(false);
     }, 10000);
-  }, [showStar, starClaimed]);
+  }, [showStar]);
 
   // Show random puzzle function
   const showRandomPuzzle = useCallback(() => {
-    // Only show if not already showing and not claimed
-    if (showPuzzleIcon || puzzleClaimed) return;
+    // Only show if not already showing
+    if (showPuzzleIcon) return;
     
     // Random position within viewport (different area than star to avoid overlap)
     const x = Math.floor(Math.random() * (window.innerWidth - 150) + 75);
@@ -176,7 +166,7 @@ const GameContainer = () => {
     puzzleTimeoutRef.current = setTimeout(() => {
       setShowPuzzleIcon(false);
     }, 12000);
-  }, [showPuzzleIcon, puzzleClaimed]);
+  }, [showPuzzleIcon]);
 
   // Check for bonus appearance every 90 seconds
   useEffect(() => {
@@ -279,7 +269,7 @@ const GameContainer = () => {
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [localAchievements, handleClick, showAchievementToast]);
+  }, [localAchievements, handleClick]);
   
   // Handle bonus click - activate SURGE MODE
   const handleBonusClick = useCallback(() => {
@@ -435,7 +425,6 @@ const GameContainer = () => {
   const handleNonogramSolve = useCallback(() => {
     // Add 10,000 points
     handleClick(100); // Give 10,000 points (100 clicks × 100 points per click)
-    setStarClaimed(true);
     
     toast({
       title: "Nonogram Solved!",
@@ -447,7 +436,6 @@ const GameContainer = () => {
   const handleJigsawSolve = useCallback(() => {
     // Add 10,000 points
     handleClick(100); // Give 10,000 points (100 clicks × 100 points per click)
-    setPuzzleClaimed(true);
     
     toast({
       title: "Jigsaw Puzzle Solved!",
@@ -455,6 +443,165 @@ const GameContainer = () => {
     });
   }, [handleClick]);
 
+  // Update achievement progress and check for unlocks
+  useEffect(() => {
+    // Skip achievement checks during initial load
+    if (isInitialLoad) return;
+    
+    // Check for achievements
+    const newAchievements = [...localAchievements];
+    let changed = false;
+    const newlyUnlocked: typeof localAchievements = [];
+
+    // First click
+    const firstClickAchievement = newAchievements.find(a => a.id === 'first-click');
+    if (firstClickAchievement) {
+      firstClickAchievement.progress = Math.min(gameState.totalClicks, 1);
+      if (gameState.totalClicks > 0 && !firstClickAchievement.isUnlocked && !previouslyUnlockedRef.current.has('first-click')) {
+        firstClickAchievement.isUnlocked = true;
+        changed = true;
+        newlyUnlocked.push(firstClickAchievement);
+      }
+    }
+
+    // Click master (100 clicks)
+    const clickMasterAchievement = newAchievements.find(a => a.id === 'click-master');
+    if (clickMasterAchievement) {
+      clickMasterAchievement.progress = Math.min(gameState.totalClicks, 100);
+      if (gameState.totalClicks >= 100 && !clickMasterAchievement.isUnlocked && !previouslyUnlockedRef.current.has('click-master')) {
+        clickMasterAchievement.isUnlocked = true;
+        changed = true;
+        newlyUnlocked.push(clickMasterAchievement);
+      }
+    }
+    
+    // Click enthusiast (1,000 clicks)
+    const clickEnthusiastAchievement = newAchievements.find(a => a.id === 'click-enthusiast');
+    if (clickEnthusiastAchievement) {
+      clickEnthusiastAchievement.progress = Math.min(gameState.totalClicks, 1000);
+      if (gameState.totalClicks >= 1000 && !clickEnthusiastAchievement.isUnlocked && !previouslyUnlockedRef.current.has('click-enthusiast')) {
+        clickEnthusiastAchievement.isUnlocked = true;
+        changed = true;
+        newlyUnlocked.push(clickEnthusiastAchievement);
+      }
+    }
+
+    // Points collector (1,000 points)
+    const pointsCollectorAchievement = newAchievements.find(a => a.id === 'points-collector');
+    if (pointsCollectorAchievement) {
+      pointsCollectorAchievement.progress = Math.min(gameState.totalPoints, 1000);
+      if (gameState.totalPoints >= 1000 && !pointsCollectorAchievement.isUnlocked && !previouslyUnlockedRef.current.has('points-collector')) {
+        pointsCollectorAchievement.isUnlocked = true;
+        changed = true;
+        newlyUnlocked.push(pointsCollectorAchievement);
+      }
+    }
+    
+    // Points hoarder (100,000 points)
+    const pointsHoarderAchievement = newAchievements.find(a => a.id === 'points-hoarder');
+    if (pointsHoarderAchievement) {
+      pointsHoarderAchievement.progress = Math.min(gameState.totalPoints, 100000);
+      if (gameState.totalPoints >= 100000 && !pointsHoarderAchievement.isUnlocked && !previouslyUnlockedRef.current.has('points-hoarder')) {
+        pointsHoarderAchievement.isUnlocked = true;
+        changed = true;
+        newlyUnlocked.push(pointsHoarderAchievement);
+      }
+    }
+    
+    // Points tycoon (1,000,000 points)
+    const pointsTycoonAchievement = newAchievements.find(a => a.id === 'points-tycoon');
+    if (pointsTycoonAchievement) {
+      pointsTycoonAchievement.progress = Math.min(gameState.totalPoints, 1000000);
+      if (gameState.totalPoints >= 1000000 && !pointsTycoonAchievement.isUnlocked && !previouslyUnlockedRef.current.has('points-tycoon')) {
+        pointsTycoonAchievement.isUnlocked = true;
+        changed = true;
+        newlyUnlocked.push(pointsTycoonAchievement);
+      }
+    }
+
+    // Upgrade novice
+    const upgradeNoviceAchievement = newAchievements.find(a => a.id === 'upgrade-novice');
+    if (upgradeNoviceAchievement) {
+      const hasUpgrades = gameState.upgrades.some(u => u.currentLevel > 0);
+      upgradeNoviceAchievement.progress = hasUpgrades ? 1 : 0;
+      if (hasUpgrades && !upgradeNoviceAchievement.isUnlocked && !previouslyUnlockedRef.current.has('upgrade-novice')) {
+        upgradeNoviceAchievement.isUnlocked = true;
+        changed = true;
+        newlyUnlocked.push(upgradeNoviceAchievement);
+      }
+    }
+
+    // Automation beginner
+    const automationBeginnerAchievement = newAchievements.find(a => a.id === 'automation-beginner');
+    if (automationBeginnerAchievement) {
+      const hasPassiveUpgrades = gameState.upgrades.some(u => u.type === 'passive' && u.currentLevel > 0);
+      automationBeginnerAchievement.progress = hasPassiveUpgrades ? 1 : 0;
+      if (hasPassiveUpgrades && !automationBeginnerAchievement.isUnlocked && !previouslyUnlockedRef.current.has('automation-beginner')) {
+        automationBeginnerAchievement.isUnlocked = true;
+        changed = true;
+        newlyUnlocked.push(automationBeginnerAchievement);
+      }
+    }
+    
+    // Pet friend (first pet)
+    const petFriendAchievement = newAchievements.find(a => a.id === 'pet-friend');
+    if (petFriendAchievement) {
+      const hasPets = gameState.pets.some(p => p.owned);
+      petFriendAchievement.progress = hasPets ? 1 : 0;
+      if (hasPets && !petFriendAchievement.isUnlocked && !previouslyUnlockedRef.current.has('pet-friend')) {
+        petFriendAchievement.isUnlocked = true;
+        changed = true;
+        newlyUnlocked.push(petFriendAchievement);
+      }
+    }
+    
+    // Pet collector (all pets)
+    const petCollectorAchievement = newAchievements.find(a => a.id === 'pet-collector');
+    if (petCollectorAchievement) {
+      const totalUnlockedPets = gameState.pets.filter(p => p.unlocked).length;
+      const ownedPets = gameState.pets.filter(p => p.owned).length;
+      petCollectorAchievement.progress = ownedPets;
+      
+      if (totalUnlockedPets > 0 && totalUnlockedPets === ownedPets && !petCollectorAchievement.isUnlocked && !previouslyUnlockedRef.current.has('pet-collector')) {
+        petCollectorAchievement.isUnlocked = true;
+        changed = true;
+        newlyUnlocked.push(petCollectorAchievement);
+      }
+    }
+    
+    // Surge master (activate SURGE MODE 5 times)
+    const surgeMasterAchievement = newAchievements.find(a => a.id === 'surge-master');
+    if (surgeMasterAchievement) {
+      surgeMasterAchievement.progress = Math.min(surgeModeActivations, 5);
+      if (surgeModeActivations >= 5 && !surgeMasterAchievement.isUnlocked && !previouslyUnlockedRef.current.has('surge-master')) {
+        surgeMasterAchievement.isUnlocked = true;
+        changed = true;
+        newlyUnlocked.push(surgeMasterAchievement);
+      }
+    }
+
+    if (changed) {
+      // Update the list of previously unlocked achievements
+      const newUnlockedIds = new Set<string>(previouslyUnlockedRef.current);
+      newlyUnlocked.forEach(achievement => {
+        newUnlockedIds.add(achievement.id);
+        showAchievementToast(achievement);
+      });
+      previouslyUnlockedRef.current = newUnlockedIds;
+      
+      setLocalAchievements(newAchievements);
+      
+      // Save achievements to localStorage
+      localStorage.setItem('clickerGameAchievements', JSON.stringify(newAchievements));
+    }
+  }, [gameState, localAchievements, surgeModeActivations, isInitialLoad]);
+  
+  const showAchievementToast = useCallback((achievement: typeof localAchievements[0]) => {
+    toast({
+      title: `Achievement Unlocked: ${achievement.title}`,
+      description: `${achievement.description}\nHow to unlock: ${achievement.unlockMessage}`,
+    });
+  }, []);
   
   if (!mounted) {
     return null;
@@ -532,7 +679,7 @@ const GameContainer = () => {
   
   return (
     <div className="container max-w-5xl mx-auto px-4 py-6 relative overflow-hidden">
-      
+      {/* Bonus mole */}
       {showBonus && (
         <div 
           onClick={handleBonusClick}
@@ -546,7 +693,7 @@ const GameContainer = () => {
         </div>
       )}
       
-      
+      {/* Nonogram star */}
       {showStar && (
         <div 
           onClick={handleStarClick}
@@ -557,7 +704,7 @@ const GameContainer = () => {
         </div>
       )}
       
-      
+      {/* Jigsaw puzzle icon */}
       {showPuzzleIcon && (
         <div 
           onClick={handlePuzzleClick}
@@ -568,21 +715,22 @@ const GameContainer = () => {
         </div>
       )}
       
-      
+      {/* Nonogram game */}
       <NonogramGame 
         isOpen={isNonogramOpen}
         onClose={() => setIsNonogramOpen(false)}
         onSolve={handleNonogramSolve}
       />
       
-      
+      {/* Jigsaw puzzle game */}
       <JigsawPuzzle 
         isOpen={isJigsawOpen}
         onClose={() => setIsJigsawOpen(false)}
         onSolve={handleJigsawSolve}
+        imageUrl="https://picsum.photos/300/300"
       />
       
-      
+      {/* SURGE MODE timer */}
       {surgeMode && (
         <div className="fixed top-20 left-1/2 transform -translate-x-1/2 bg-red-600 text-white px-4 py-2 rounded-full flex items-center gap-2 z-50 animate-pulse">
           <Zap size={16} className="text-yellow-300" />
@@ -590,7 +738,7 @@ const GameContainer = () => {
         </div>
       )}
       
-      
+      {/* Last save indicator */}
       {lastSaved && (
         <div className="fixed bottom-4 right-4 text-xs text-gray-500 flex items-center gap-1">
           <Save size={12} />
@@ -598,7 +746,7 @@ const GameContainer = () => {
         </div>
       )}
       
-      
+      {/* Reset, Achievements and Sound toggle buttons */}
       <div className="absolute top-6 right-6 z-10 flex gap-2">
         <Button
           variant="outline"
@@ -638,11 +786,11 @@ const GameContainer = () => {
         </AlertDialog>
       </div>
       
-      
+      {/* Noise overlay */}
       <div className="absolute inset-0 pointer-events-none noise-bg"></div>
       
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
-        
+        {/* Left column - Stats and Clicker */}
         <div className="md:col-span-1 space-y-6 order-2 md:order-1">
           <Stats 
             points={gameState.points}
@@ -670,7 +818,7 @@ const GameContainer = () => {
           </div>
         </div>
         
-        
+        {/* Right column - Upgrades */}
         <div className="md:col-span-2 order-1 md:order-2">
           <UpgradeShop 
             gameState={gameState}
@@ -681,10 +829,10 @@ const GameContainer = () => {
         </div>
       </div>
       
-      
+      {/* Background gradient */}
       <div className="fixed inset-0 bg-gradient-to-br from-game-neutral via-white to-game-neutral/50 -z-10"></div>
 
-      
+      {/* Achievements Sidebar */}
       <AchievementsSidebar
         achievements={localAchievements}
         isOpen={isSidebarOpen}

@@ -2,153 +2,91 @@
 import { useState, useEffect, useRef } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Puzzle } from 'lucide-react';
-import { fabric } from 'fabric';
+
+interface Piece {
+  id: number;
+  correctPosition: { row: number; col: number };
+  currentPosition: { row: number; col: number };
+  image: string;
+}
 
 interface JigsawPuzzleProps {
   isOpen: boolean;
   onClose: () => void;
   onSolve: () => void;
+  imageUrl?: string;
 }
 
-interface JigsawPiece {
-  id: number;
-  fabricObject: fabric.Object;
-  correctPosition: { left: number; top: number };
-  currentPosition: { left: number; top: number };
-  row: number;
-  col: number;
-}
-
-const JigsawPuzzle = ({ isOpen, onClose, onSolve }: JigsawPuzzleProps) => {
-  const [pieces, setPieces] = useState<JigsawPiece[]>([]);
+const JigsawPuzzle = ({ isOpen, onClose, onSolve, imageUrl = "https://picsum.photos/300/300" }: JigsawPuzzleProps) => {
+  const [pieces, setPieces] = useState<Piece[]>([]);
   const [solved, setSolved] = useState(false);
   const [loaded, setLoaded] = useState(false);
-  const [canvas, setCanvas] = useState<fabric.Canvas | null>(null);
+  const [selectedPiece, setSelectedPiece] = useState<number | null>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const puzzleSize = 400; // Increased size
+  const puzzleSize = 300;
   const gridSize = 3;
   const pieceSize = puzzleSize / gridSize;
-  const snapThreshold = 20; // Distance in pixels for snapping
-  const [rewardClaimed, setRewardClaimed] = useState(false);
 
-  // Initialize fabric canvas
+  // Initialize puzzle pieces
   useEffect(() => {
-    if (isOpen && canvasRef.current && !canvas) {
-      const fabricCanvas = new fabric.Canvas(canvasRef.current, {
-        width: puzzleSize,
-        height: puzzleSize,
-        selection: false,
-        backgroundColor: '#f0f0f0'
-      });
-      
-      setCanvas(fabricCanvas);
-      
-      // Clean up
-      return () => {
-        fabricCanvas.dispose();
-        setCanvas(null);
-      };
-    }
-  }, [isOpen, canvas]);
-
-  // Create jigsaw pieces
-  useEffect(() => {
-    if (isOpen && canvas && !loaded) {
-      // Clear any existing pieces
-      canvas.clear();
-      setPieces([]);
-      
-      const newPieces: JigsawPiece[] = [];
-      const colors = ['#f44336', '#e91e63', '#9c27b0', '#673ab7', '#3f51b5', '#2196f3', '#03a9f4', '#00bcd4', '#009688'];
-      
-      // Create the jigsaw pieces (3x3 grid)
-      for (let row = 0; row < gridSize; row++) {
-        for (let col = 0; col < gridSize; col++) {
-          const id = row * gridSize + col;
-          
-          // Calculate correct position on grid
-          const correctLeft = col * pieceSize;
-          const correctTop = row * pieceSize;
-          
-          // Random initial position (but avoid edges)
-          const randomLeft = Math.random() * (puzzleSize - pieceSize - 20) + 10;
-          const randomTop = Math.random() * (puzzleSize - pieceSize - 20) + 10;
-          
-          // Create a fabric rectangle for each piece
-          const colorIndex = (row * gridSize + col) % colors.length;
-          const rect = new fabric.Rect({
-            left: randomLeft,
-            top: randomTop,
-            width: pieceSize - 4, // Small gap between pieces
-            height: pieceSize - 4,
-            fill: colors[colorIndex],
-            hasControls: false,
-            hasBorders: true,
-            lockRotation: true,
-            lockScalingX: true,
-            lockScalingY: true,
-            cornerSize: 10,
-            transparentCorners: false,
-            stroke: '#fff',
-            strokeWidth: 2,
-            shadow: new fabric.Shadow({
-              color: 'rgba(0,0,0,0.3)',
-              blur: 5,
-              offsetX: 2,
-              offsetY: 2
-            })
-          });
-          
-          // Add text to identify the piece
-          const text = new fabric.Text(`${row+1},${col+1}`, {
-            left: randomLeft + pieceSize / 2 - 15,
-            top: randomTop + pieceSize / 2 - 10,
-            fontSize: 16,
-            fontFamily: 'Arial',
-            fill: 'white',
-            selectable: false,
-            evented: false
-          });
-          
-          // Create and store piece data
-          const piece: JigsawPiece = {
-            id,
-            fabricObject: rect,
-            correctPosition: { left: correctLeft, top: correctTop },
-            currentPosition: { left: randomLeft, top: randomTop },
-            row,
-            col
-          };
-          
-          newPieces.push(piece);
-          
-          // Add piece to canvas
-          canvas.add(rect);
-          canvas.add(text);
-          
-          // Group piece and text together
-          rect.on('moving', function() {
-            text.set({
-              left: rect.left! + pieceSize / 2 - 15,
-              top: rect.top! + pieceSize / 2 - 10
+    if (isOpen && !loaded) {
+      const img = new Image();
+      img.crossOrigin = "anonymous";
+      img.onload = () => {
+        // Create a canvas to slice the image
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return;
+        
+        canvas.width = pieceSize;
+        canvas.height = pieceSize;
+        
+        const newPieces: Piece[] = [];
+        
+        // Create 9 pieces (3x3 grid)
+        for (let row = 0; row < gridSize; row++) {
+          for (let col = 0; col < gridSize; col++) {
+            const id = row * gridSize + col;
+            
+            // Draw portion of the image on the canvas
+            ctx.clearRect(0, 0, pieceSize, pieceSize);
+            ctx.drawImage(
+              img,
+              col * pieceSize, row * pieceSize, pieceSize, pieceSize,
+              0, 0, pieceSize, pieceSize
+            );
+            
+            // Convert to data URL
+            const pieceImage = canvas.toDataURL('image/png');
+            
+            newPieces.push({
+              id,
+              correctPosition: { row, col },
+              currentPosition: { row, col },
+              image: pieceImage
             });
-            canvas.renderAll();
-          });
+          }
         }
-      }
+        
+        // Shuffle pieces
+        const shuffledPieces = [...newPieces];
+        for (let i = shuffledPieces.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          
+          // Swap current positions
+          const tempPos = { ...shuffledPieces[i].currentPosition };
+          shuffledPieces[i].currentPosition = { ...shuffledPieces[j].currentPosition };
+          shuffledPieces[j].currentPosition = tempPos;
+        }
+        
+        setPieces(shuffledPieces);
+        setLoaded(true);
+        setSolved(false);
+      };
       
-      // Once all pieces are created, set up the pieces state and event handlers
-      setPieces(newPieces);
-      setLoaded(true);
-      setSolved(false);
-      
-      // Set up drag and drop handlers
-      canvas.on('object:moving', handlePieceMoving);
-      canvas.on('object:modified', checkSolution);
-      
-      canvas.renderAll();
+      img.src = imageUrl;
     }
-  }, [isOpen, canvas, loaded, pieceSize, gridSize, puzzleSize]);
+  }, [isOpen, imageUrl, loaded, pieceSize, gridSize]);
 
   // Reset when closed
   useEffect(() => {
@@ -156,101 +94,104 @@ const JigsawPuzzle = ({ isOpen, onClose, onSolve }: JigsawPuzzleProps) => {
       setLoaded(false);
       setPieces([]);
       setSolved(false);
-      
-      if (canvas) {
-        canvas.clear();
-        canvas.off('object:moving');
-        canvas.off('object:modified');
-      }
+      setSelectedPiece(null);
     }
-  }, [isOpen, canvas]);
+  }, [isOpen]);
 
-  // Handle piece moving
-  const handlePieceMoving = (e: fabric.IEvent) => {
-    if (!e.target) return;
+  // Handle piece selection
+  const handlePieceClick = (id: number) => {
+    if (solved) return;
     
-    const movingPiece = pieces.find(
-      p => p.fabricObject === e.target
-    );
-    
-    if (!movingPiece) return;
-    
-    // Check if piece is near its correct position for snapping
-    const currentLeft = e.target.left || 0;
-    const currentTop = e.target.top || 0;
-    const correctLeft = movingPiece.correctPosition.left;
-    const correctTop = movingPiece.correctPosition.top;
-    
-    // Snap to position if close enough
-    if (
-      Math.abs(currentLeft - correctLeft) < snapThreshold && 
-      Math.abs(currentTop - correctTop) < snapThreshold
-    ) {
-      e.target.set({
-        left: correctLeft,
-        top: correctTop
+    if (selectedPiece === null) {
+      // Select the first piece
+      setSelectedPiece(id);
+    } else {
+      // Swap pieces
+      setPieces(prev => {
+        const newPieces = [...prev];
+        const piece1Index = newPieces.findIndex(p => p.id === selectedPiece);
+        const piece2Index = newPieces.findIndex(p => p.id === id);
+        
+        if (piece1Index !== -1 && piece2Index !== -1) {
+          // Swap current positions
+          const tempPos = { ...newPieces[piece1Index].currentPosition };
+          newPieces[piece1Index].currentPosition = { ...newPieces[piece2Index].currentPosition };
+          newPieces[piece2Index].currentPosition = tempPos;
+        }
+        
+        return newPieces;
       });
       
-      // Make it slightly different color to indicate correct placement
-      e.target.set('stroke', '#0d9');
+      // Deselect
+      setSelectedPiece(null);
       
-      // Update piece position
-      setPieces(prev => 
-        prev.map(p => 
-          p.id === movingPiece.id 
-            ? {
-                ...p,
-                currentPosition: { left: correctLeft, top: correctTop }
-              }
-            : p
-        )
-      );
-    } else {
-      // Reset stroke color when not in correct position
-      e.target.set('stroke', '#fff');
-      
-      // Update current position
-      if (e.target.left !== undefined && e.target.top !== undefined) {
-        setPieces(prev => 
-          prev.map(p => 
-            p.id === movingPiece.id 
-              ? {
-                  ...p,
-                  currentPosition: { left: e.target!.left || 0, top: e.target!.top || 0 }
-                }
-              : p
-          )
-        );
-      }
+      // Check if puzzle is solved
+      setTimeout(checkSolution, 300);
     }
-    
-    canvas?.renderAll();
   };
 
-  // Check if puzzle is solved
+  // Check if puzzle is correctly solved
   const checkSolution = () => {
     const isSolved = pieces.every(piece => 
-      Math.abs(piece.currentPosition.left - piece.correctPosition.left) < snapThreshold &&
-      Math.abs(piece.currentPosition.top - piece.correctPosition.top) < snapThreshold
+      piece.correctPosition.row === piece.currentPosition.row && 
+      piece.correctPosition.col === piece.currentPosition.col
     );
     
-    if (isSolved && !rewardClaimed) {
+    if (isSolved) {
       setSolved(true);
-      setRewardClaimed(true);
-      
-      // Add a delay before calling onSolve and onClose
       setTimeout(() => {
         onSolve();
-        setTimeout(() => {
-          onClose();
-        }, 500);
+        onClose();
       }, 1500);
     }
   };
 
+  // Draw the puzzle on the canvas
+  useEffect(() => {
+    if (!loaded || !canvasRef.current) return;
+    
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    
+    // Clear canvas
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    // Sort pieces by their current position (row, col)
+    const sortedPieces = [...pieces].sort((a, b) => {
+      if (a.currentPosition.row !== b.currentPosition.row) {
+        return a.currentPosition.row - b.currentPosition.row;
+      }
+      return a.currentPosition.col - b.currentPosition.col;
+    });
+    
+    // Draw each piece in its current position
+    sortedPieces.forEach(piece => {
+      const img = new Image();
+      img.onload = () => {
+        const x = piece.currentPosition.col * pieceSize;
+        const y = piece.currentPosition.row * pieceSize;
+        
+        // Draw the piece
+        ctx.drawImage(img, x, y, pieceSize, pieceSize);
+        
+        // Draw border
+        ctx.strokeStyle = selectedPiece === piece.id ? '#ff5500' : '#999';
+        ctx.lineWidth = selectedPiece === piece.id ? 3 : 1;
+        ctx.strokeRect(x, y, pieceSize, pieceSize);
+        
+        // Draw piece number for debugging
+        // ctx.fillStyle = 'white';
+        // ctx.font = '12px Arial';
+        // ctx.fillText(`${piece.id}`, x + 5, y + 15);
+      };
+      img.src = piece.image;
+    });
+  }, [pieces, loaded, selectedPiece, pieceSize]);
+
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-xl">
+      <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Puzzle className="h-5 w-5" />
@@ -261,16 +202,36 @@ const JigsawPuzzle = ({ isOpen, onClose, onSolve }: JigsawPuzzleProps) => {
         <div className="p-4">
           <div className="flex justify-center mb-4">
             <p className="text-sm text-gray-500">
-              Drag and drop the pieces to solve the puzzle
+              Click two pieces to swap them and solve the puzzle
             </p>
           </div>
           
           <div className="flex justify-center">
             <canvas 
               ref={canvasRef}
-              className="border border-gray-300 rounded"
               width={puzzleSize}
               height={puzzleSize}
+              className="border border-gray-300 cursor-pointer"
+              onClick={(e) => {
+                if (!canvasRef.current) return;
+                
+                const rect = canvasRef.current.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                
+                // Calculate which piece was clicked
+                const col = Math.floor(x / pieceSize);
+                const row = Math.floor(y / pieceSize);
+                
+                // Find the piece at this position
+                const piece = pieces.find(p => 
+                  p.currentPosition.row === row && p.currentPosition.col === col
+                );
+                
+                if (piece) {
+                  handlePieceClick(piece.id);
+                }
+              }}
             />
           </div>
           
