@@ -48,36 +48,28 @@ const ClickerButton = ({ onClick, pointsPerClick, surgeMode, playSound = true }:
   };
   
   return (
-    <div className="relative flex items-center justify-center my-6">
+    <div className="relative flex items-center justify-center my-6 w-full max-w-[280px]">
       <button
         ref={buttonRef}
-        className={`relative w-44 h-44 rounded-full button-click-effect
+        className={`relative w-full aspect-square rounded-full button-click-effect
                    ${isPressed ? 'scale-95' : 'scale-100'}
                    transition-all duration-200 ease-out
                    ${surgeMode 
                      ? 'bg-gradient-to-br from-red-400 to-red-600 animate-surge-shake' 
-                     : 'bg-gradient-to-br from-game-accent-light to-game-accent'}
-                   shadow-lg hover:shadow-xl hover:from-game-accent hover:to-game-accent-dark
+                     : 'bg-gradient-to-br from-amber-300 to-amber-600'}
+                   shadow-lg hover:shadow-xl hover:brightness-110
                    flex items-center justify-center text-white font-medium
                    overflow-visible`}
         onClick={handleClick}
       >
-        {/* Inner circle */}
-        <div className={`absolute inset-1.5 rounded-full ${surgeMode ? 'bg-red-300/30' : 'bg-white/10'} backdrop-blur-sm`}></div>
-        
-        {/* Center content */}
-        <div className="relative z-10 flex flex-col items-center justify-center p-4">
-          <span className="text-lg font-semibold tracking-tight mb-2">TAP</span>
-          <span className="text-white/80 text-sm">+{formatNumber(pointsPerClick)}</span>
-          {surgeMode && (
-            <span className="text-white text-xs font-bold mt-1 bg-red-600 px-2 py-0.5 rounded-full animate-pulse">
-              SURGE MODE!
-            </span>
-          )}
+        {/* Use the cookie image */}
+        <div className="absolute inset-4 rounded-full overflow-hidden">
+          <img 
+            src="/lovable-uploads/41fd9055-8be3-471b-ab52-fd11b819b3b8.png" 
+            alt="Cookie" 
+            className="w-full h-full object-cover"
+          />
         </div>
-        
-        {/* Pulsing effect */}
-        <div className={`absolute inset-0 rounded-full ${surgeMode ? 'bg-red-400/20' : 'bg-white/20'} animate-pulse-subtle`}></div>
         
         {/* Floating point texts */}
         {floatingTexts.map((text) => (

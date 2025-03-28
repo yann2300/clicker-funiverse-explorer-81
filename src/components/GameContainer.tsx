@@ -1,4 +1,3 @@
-
 import { useEffect, useState, useRef, useCallback } from 'react';
 import ClickerButton from './ClickerButton';
 import UpgradeShop from './UpgradeShop';
@@ -790,30 +789,32 @@ const GameContainer = () => {
       <div className="absolute inset-0 pointer-events-none noise-bg"></div>
       
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
-        {/* Left column - Stats and Clicker */}
+        {/* Left column - Clicker and Stats */}
         <div className="md:col-span-1 space-y-6 order-2 md:order-1">
-          <Stats 
-            points={gameState.points}
-            pointsPerClick={gameState.pointsPerClick * (surgeMode ? 2 : 1)}
-            pointsPerSecond={gameState.pointsPerSecond * (surgeMode ? 2 : 1)}
-            totalClicks={gameState.totalClicks}
-            totalPoints={gameState.totalPoints}
-            rawPointsPerClick={rawStats.pointsPerClick * (surgeMode ? 2 : 1)}
-            rawPointsPerSecond={rawStats.pointsPerSecond * (surgeMode ? 2 : 1)}
-            pointsMultiplier={gameState.pointsMultiplier}
-            surgeTimeBonus={gameState.surgeTimeBonus}
-            clickValueBoost={calculatePetBonuses(gameState.pets).clickValueBoost}
-            passiveBoost={calculatePetBonuses(gameState.pets).passiveBoost}
-            surgeModeChance={calculatePetBonuses(gameState.pets).surgeModeChance}
-            surgeMode={surgeMode}
-          />
-          
+          {/* New layout - Clicker at the top */}
           <div className="glass-panel rounded-2xl p-4 flex flex-col items-center justify-center">
             <ClickerButton 
               onClick={handleGameClick}
               pointsPerClick={gameState.pointsPerClick * (surgeMode ? 2 : 1)}
               surgeMode={surgeMode}
               playSound={soundEnabled}
+            />
+
+            {/* Stats panel just below the clicker button */}
+            <Stats 
+              points={gameState.points}
+              pointsPerClick={gameState.pointsPerClick * (surgeMode ? 2 : 1)}
+              pointsPerSecond={gameState.pointsPerSecond * (surgeMode ? 2 : 1)}
+              totalClicks={gameState.totalClicks}
+              totalPoints={gameState.totalPoints}
+              rawPointsPerClick={rawStats.pointsPerClick * (surgeMode ? 2 : 1)}
+              rawPointsPerSecond={rawStats.pointsPerSecond * (surgeMode ? 2 : 1)}
+              pointsMultiplier={gameState.pointsMultiplier}
+              surgeTimeBonus={gameState.surgeTimeBonus}
+              clickValueBoost={calculatePetBonuses(gameState.pets).clickValueBoost}
+              passiveBoost={calculatePetBonuses(gameState.pets).passiveBoost}
+              surgeModeChance={calculatePetBonuses(gameState.pets).surgeModeChance}
+              surgeMode={surgeMode}
             />
           </div>
         </div>
@@ -824,22 +825,4 @@ const GameContainer = () => {
             gameState={gameState}
             onPurchase={purchaseUpgrade}
             onPetPurchase={purchasePet}
-            calculateUpgradeCost={calculateUpgradeCost}
-          />
-        </div>
-      </div>
-      
-      {/* Background gradient */}
-      <div className="fixed inset-0 bg-gradient-to-br from-game-neutral via-white to-game-neutral/50 -z-10"></div>
-
-      {/* Achievements Sidebar */}
-      <AchievementsSidebar
-        achievements={localAchievements}
-        isOpen={isSidebarOpen}
-        onClose={() => setIsSidebarOpen(false)}
-      />
-    </div>
-  );
-};
-
-export default GameContainer;
+            calculateUpgrade
