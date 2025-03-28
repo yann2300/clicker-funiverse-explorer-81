@@ -1,3 +1,4 @@
+
 import { useEffect, useState, useRef, useCallback } from 'react';
 import ClickerButton from './ClickerButton';
 import UpgradeShop from './UpgradeShop';
@@ -818,4 +819,61 @@ const GameContainer = () => {
         <div 
           onClick={handleStarClick}
           style={getStarStyles() as React.CSSProperties}
-          className="
+          className="animate-pulse-subtle"
+        >
+          <Star size={40} fill="#FFD700" />
+        </div>
+      )}
+      
+      {showPuzzleIcon && (
+        <div 
+          onClick={handlePuzzleClick}
+          style={getPuzzleStyles() as React.CSSProperties}
+          className="animate-pulse-subtle"
+        >
+          <Puzzle size={40} fill="#4CAF50" />
+        </div>
+      )}
+      
+      {/* Nonogram game */}
+      <NonogramGame 
+        isOpen={isNonogramOpen}
+        onClose={() => setIsNonogramOpen(false)}
+        onSolve={handleNonogramSolve}
+      />
+      
+      {/* Jigsaw puzzle game */}
+      <JigsawPuzzle 
+        isOpen={isJigsawOpen}
+        onClose={() => setIsJigsawOpen(false)}
+        onSolve={handleJigsawSolve}
+        imageUrl="https://picsum.photos/300/300"
+      />
+      
+      {/* SURGE MODE timer */}
+      {surgeMode && (
+        <div className="fixed top-20 left-1/2 transform -translate-x-1/2 bg-red-600 text-white px-4 py-2 rounded-full flex items-center gap-2 z-50 animate-pulse">
+          <Zap size={16} className="text-yellow-300" />
+          <span className="font-bold">SURGE MODE: {surgeModeTimeLeft}s</span>
+        </div>
+      )}
+      
+      {/* Last save indicator */}
+      {lastSaved && (
+        <div className="fixed bottom-4 right-4 text-xs text-gray-500 flex items-center gap-1">
+          <Save size={12} />
+          <span>Last saved: {lastSaved.toLocaleTimeString()}</span>
+        </div>
+      )}
+      
+      {/* Achievements sidebar */}
+      <AchievementsSidebar
+        isOpen={isSidebarOpen}
+        onClose={() => setIsSidebarOpen(false)}
+        achievements={localAchievements}
+      />
+    </div>
+  );
+};
+
+export default GameContainer;
