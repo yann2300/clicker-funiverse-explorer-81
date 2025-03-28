@@ -825,4 +825,4 @@ const GameContainer = () => {
             gameState={gameState}
             onPurchase={purchaseUpgrade}
             onPetPurchase={purchasePet}
-            calculateUpgrade
+            calculateUpgradeCost={calculate
