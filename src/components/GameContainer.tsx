@@ -1,3 +1,4 @@
+
 import { useEffect, useState, useRef, useCallback } from 'react';
 import ClickerButton from './ClickerButton';
 import UpgradeShop from './UpgradeShop';
@@ -825,4 +826,19 @@ const GameContainer = () => {
             gameState={gameState}
             onPurchase={purchaseUpgrade}
             onPetPurchase={purchasePet}
-            calculateUpgradeCost={calculate
+            calculateUpgradeCost={calculateUpgradeCost}
+          />
+        </div>
+      </div>
+      
+      {/* Achievements sidebar */}
+      <AchievementsSidebar 
+        achievements={localAchievements}
+        isOpen={isSidebarOpen}
+        onClose={() => setIsSidebarOpen(false)}
+      />
+    </div>
+  );
+};
+
+export default GameContainer;
