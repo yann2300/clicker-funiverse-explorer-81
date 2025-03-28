@@ -48,26 +48,26 @@ const ClickerButton = ({ onClick, pointsPerClick, surgeMode, playSound = true }:
   };
   
   return (
-    <div className="relative flex items-center justify-center my-6 w-full max-w-[280px]">
+    <div className="relative flex items-center justify-center my-4 w-full max-w-[240px]">
       <button
         ref={buttonRef}
-        className={`relative w-full aspect-square rounded-full button-click-effect
+        className={`relative w-full aspect-square rounded-md button-click-effect
                    ${isPressed ? 'scale-95' : 'scale-100'}
                    transition-all duration-200 ease-out
                    ${surgeMode 
-                     ? 'bg-gradient-to-br from-red-400 to-red-600 animate-surge-shake' 
-                     : 'bg-gradient-to-br from-amber-300 to-amber-600'}
+                     ? 'bg-red-500 animate-surge-shake' 
+                     : 'bg-[#2f3540]'}
                    shadow-lg hover:shadow-xl hover:brightness-110
                    flex items-center justify-center text-white font-medium
                    overflow-visible`}
         onClick={handleClick}
       >
-        {/* Use the cookie image */}
-        <div className="absolute inset-4 rounded-full overflow-hidden">
+        {/* Use the SG logo image */}
+        <div className="absolute inset-0 flex items-center justify-center p-8">
           <img 
-            src="/lovable-uploads/41fd9055-8be3-471b-ab52-fd11b819b3b8.png" 
-            alt="Cookie" 
-            className="w-full h-full object-cover"
+            src="https://s3.eu-west-2.amazonaws.com/img.creativepool.com/files/candidate/portfolio/full/752444.png" 
+            alt="SteamGifts Logo" 
+            className="w-full h-full object-contain"
           />
         </div>
         

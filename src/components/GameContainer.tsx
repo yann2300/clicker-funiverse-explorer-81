@@ -1,4 +1,3 @@
-
 import { useEffect, useState, useRef, useCallback } from 'react';
 import ClickerButton from './ClickerButton';
 import UpgradeShop from './UpgradeShop';
@@ -15,6 +14,9 @@ import usePetsSystem from '@/hooks/usePetsSystem';
 import useSoundSettings from '@/hooks/useSoundSettings';
 import NonogramGame from './NonogramGame';
 import JigsawPuzzle from './JigsawPuzzle';
+import Games from './Games';
+import LevelProgress from './LevelProgress';
+import { formatNumber } from '@/lib/gameUtils';
 
 // Konami code sequence
 const KONAMI_CODE = [
@@ -26,7 +28,7 @@ const KONAMI_CODE = [
 ];
 
 const GameContainer = () => {
-  const { gameState, handleClick, purchaseUpgrade, purchasePet, calculateUpgradeCost, resetGame, getSurgeTime, saveGameState } = useGameState();
+  const { gameState, handleClick, purchaseUpgrade, purchasePet, calculateUpgradeCost, resetGame, getSurgeTime, saveGameState, updateGameUnlocks } = useGameState();
   const [mounted, setMounted] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [localAchievements, setLocalAchievements] = useState(achievements);
@@ -593,8 +595,11 @@ const GameContainer = () => {
       
       // Save achievements to localStorage
       localStorage.setItem('clickerGameAchievements', JSON.stringify(newAchievements));
+      
+      // Update game unlocks based on achievements
+      updateGameUnlocks(newUnlockedIds);
     }
-  }, [gameState, localAchievements, surgeModeActivations, isInitialLoad]);
+  }, [gameState, localAchievements, surgeModeActivations, isInitialLoad, updateGameUnlocks]);
   
   const showAchievementToast = useCallback((achievement: typeof localAchievements[0]) => {
     toast({
@@ -678,130 +683,90 @@ const GameContainer = () => {
   };
   
   return (
-    <div className="container max-w-5xl mx-auto px-4 py-6 relative overflow-hidden">
-      {/* Bonus mole */}
-      {showBonus && (
-        <div 
-          onClick={handleBonusClick}
-          style={getBonusStyles() as React.CSSProperties}
-        >
-          <img 
-            src="https://dejpknyizje2n.cloudfront.net/media/carstickers/versions/mole-pixel-sticker-ud740-811c-x450.png" 
-            alt="Bonus" 
-            className="w-full h-full object-contain"
-          />
+    <div className="container mx-auto px-4 py-3 relative overflow-hidden">
+      {/* Header with game stats */}
+      <div className="bg-[#2f3540] rounded-md shadow-md flex items-center justify-between px-4 py-3 mb-4 text-[#acb1b9]">
+        <div className="flex items-center gap-6">
+          <h1 className="text-2xl font-bold">{formatNumber(gameState.points)}P</h1>
+          <div className="flex items-center gap-4">
+            <div className="text-sm">+{formatNumber(gameState.pointsPerClick)}/click</div>
+            <div className="text-sm">+{formatNumber(gameState.pointsPerSecond)}/sec</div>
+          </div>
         </div>
-      )}
-      
-      {/* Nonogram star */}
-      {showStar && (
-        <div 
-          onClick={handleStarClick}
-          style={getStarStyles() as React.CSSProperties}
-          className="animate-pulse-subtle"
-        >
-          <Star size={40} fill="#FFD700" />
-        </div>
-      )}
-      
-      {/* Jigsaw puzzle icon */}
-      {showPuzzleIcon && (
-        <div 
-          onClick={handlePuzzleClick}
-          style={getPuzzleStyles() as React.CSSProperties}
-          className="animate-pulse-subtle"
-        >
-          <Puzzle size={40} fill="#4CAF50" />
-        </div>
-      )}
-      
-      {/* Nonogram game */}
-      <NonogramGame 
-        isOpen={isNonogramOpen}
-        onClose={() => setIsNonogramOpen(false)}
-        onSolve={handleNonogramSolve}
-      />
-      
-      {/* Jigsaw puzzle game */}
-      <JigsawPuzzle 
-        isOpen={isJigsawOpen}
-        onClose={() => setIsJigsawOpen(false)}
-        onSolve={handleJigsawSolve}
-        imageUrl="https://picsum.photos/300/300"
-      />
-      
-      {/* SURGE MODE timer */}
-      {surgeMode && (
-        <div className="fixed top-20 left-1/2 transform -translate-x-1/2 bg-red-600 text-white px-4 py-2 rounded-full flex items-center gap-2 z-50 animate-pulse">
-          <Zap size={16} className="text-yellow-300" />
-          <span className="font-bold">SURGE MODE: {surgeModeTimeLeft}s</span>
-        </div>
-      )}
-      
-      {/* Last save indicator */}
-      {lastSaved && (
-        <div className="fixed bottom-4 right-4 text-xs text-gray-500 flex items-center gap-1">
-          <Save size={12} />
-          <span>Last saved: {lastSaved.toLocaleTimeString()}</span>
-        </div>
-      )}
-      
-      {/* Reset, Achievements and Sound toggle buttons */}
-      <div className="absolute top-6 right-6 z-10 flex gap-2">
-        <Button
-          variant="outline"
-          size="sm"
-          className="rounded-full p-2 h-auto"
-          onClick={toggleSound}
-          title={soundEnabled ? "Mute sounds" : "Enable sounds"}
-        >
-          {soundEnabled ? <Volume2 size={16} /> : <VolumeX size={16} />}
-        </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          className="rounded-full p-2 h-auto"
-          onClick={() => setIsSidebarOpen(true)}
-        >
-          <Trophy size={16} />
-        </Button>
-        <AlertDialog>
-          <AlertDialogTrigger asChild>
-            <Button variant="outline" size="sm" className="rounded-full p-2 h-auto">
-              <RefreshCw size={16} />
+        
+        <div className="flex items-center gap-4">
+          <div className="bg-[#434a5a] rounded-md px-3 py-1">
+            <span className="text-sm font-medium">Level {gameState.level}</span>
+          </div>
+          
+          {/* Reset, Achievements and Sound toggle buttons */}
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              className="rounded-full p-2 h-auto bg-[#434a5a] border-none text-[#acb1b9]"
+              onClick={toggleSound}
+              title={soundEnabled ? "Mute sounds" : "Enable sounds"}
+            >
+              {soundEnabled ? <Volume2 size={16} /> : <VolumeX size={16} />}
             </Button>
-          </AlertDialogTrigger>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Reset game progress?</AlertDialogTitle>
-              <AlertDialogDescription>
-                This will reset all your progress including points, upgrades, and statistics. This action cannot be undone.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <AlertDialogAction onClick={resetGame} className="bg-red-500 hover:bg-red-600">Reset</AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
+            <Button
+              variant="outline"
+              size="sm"
+              className="rounded-full p-2 h-auto bg-[#434a5a] border-none text-[#acb1b9]"
+              onClick={() => setIsSidebarOpen(true)}
+            >
+              <Trophy size={16} />
+            </Button>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="outline" size="sm" className="rounded-full p-2 h-auto bg-[#434a5a] border-none text-[#acb1b9]">
+                  <RefreshCw size={16} />
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Reset game progress?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This will reset all your progress including points, upgrades, and statistics. This action cannot be undone.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction onClick={resetGame} className="bg-red-500 hover:bg-red-600">Reset</AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </div>
+        </div>
       </div>
       
-      {/* Noise overlay */}
-      <div className="absolute inset-0 pointer-events-none noise-bg"></div>
-      
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
-        {/* Left column - Clicker and Stats */}
-        <div className="md:col-span-1 space-y-6 order-2 md:order-1">
-          {/* New layout - Clicker at the top */}
-          <div className="glass-panel rounded-2xl p-4 flex flex-col items-center justify-center">
-            <ClickerButton 
-              onClick={handleGameClick}
-              pointsPerClick={gameState.pointsPerClick * (surgeMode ? 2 : 1)}
-              surgeMode={surgeMode}
-              playSound={soundEnabled}
-            />
-
-            {/* Stats panel just below the clicker button */}
+      {/* Main content */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {/* Left column - Clicker and Upgrades */}
+        <div className="md:col-span-1 space-y-4">
+          {/* Clicker panel */}
+          <div className="glass-panel rounded-md overflow-hidden">
+            <div className="bg-[#eef1f5] p-4 flex flex-col items-center justify-center">
+              <h2 className="text-xl font-semibold text-[#515763] mb-4">
+                SG Clicker: a small grind to get them giveaways!
+              </h2>
+              <ClickerButton 
+                onClick={handleGameClick}
+                pointsPerClick={gameState.pointsPerClick * (surgeMode ? 2 : 1)}
+                surgeMode={surgeMode}
+                playSound={soundEnabled}
+              />
+              
+              {/* Level progress bar */}
+              <LevelProgress 
+                level={gameState.level}
+                xp={gameState.xp}
+                xpToNextLevel={gameState.xpToNextLevel}
+              />
+            </div>
+            
+            {/* Stats shown below the clicker */}
             <Stats 
               points={gameState.points}
               pointsPerClick={gameState.pointsPerClick * (surgeMode ? 2 : 1)}
@@ -816,12 +781,11 @@ const GameContainer = () => {
               passiveBoost={calculatePetBonuses(gameState.pets).passiveBoost}
               surgeModeChance={calculatePetBonuses(gameState.pets).surgeModeChance}
               surgeMode={surgeMode}
+              level={gameState.level}
             />
           </div>
-        </div>
-        
-        {/* Right column - Upgrades */}
-        <div className="md:col-span-2 order-1 md:order-2">
+          
+          {/* Upgrades panel moved to bottom left */}
           <UpgradeShop 
             gameState={gameState}
             onPurchase={purchaseUpgrade}
@@ -829,16 +793,29 @@ const GameContainer = () => {
             calculateUpgradeCost={calculateUpgradeCost}
           />
         </div>
+        
+        {/* Right column - Games */}
+        <div className="md:col-span-2">
+          <Games games={gameState.games} userLevel={gameState.level} />
+        </div>
       </div>
       
-      {/* Achievements sidebar */}
-      <AchievementsSidebar 
-        achievements={localAchievements}
-        isOpen={isSidebarOpen}
-        onClose={() => setIsSidebarOpen(false)}
-      />
-    </div>
-  );
-};
-
-export default GameContainer;
+      {/* Bonus elements */}
+      {showBonus && (
+        <div 
+          onClick={handleBonusClick}
+          style={getBonusStyles() as React.CSSProperties}
+        >
+          <img 
+            src="https://dejpknyizje2n.cloudfront.net/media/carstickers/versions/mole-pixel-sticker-ud740-811c-x450.png" 
+            alt="Bonus" 
+            className="w-full h-full object-contain"
+          />
+        </div>
+      )}
+      
+      {showStar && (
+        <div 
+          onClick={handleStarClick}
+          style={getStarStyles() as React.CSSProperties}
+          className="

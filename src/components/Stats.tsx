@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { MousePointerClick } from "lucide-react";
 import { 
@@ -24,6 +25,7 @@ interface StatsProps {
   passiveBoost: number;
   surgeModeChance: number;
   surgeMode?: boolean;
+  level: number;
 }
 
 const Stats: React.FC<StatsProps> = ({
@@ -39,20 +41,18 @@ const Stats: React.FC<StatsProps> = ({
   clickValueBoost,
   passiveBoost,
   surgeModeChance,
-  surgeMode = false
+  surgeMode = false,
+  level
 }) => {
   return (
-    <div className="glass-panel rounded-lg p-4 text-center">
+    <div className="bg-[#2f3540] rounded-b-md px-4 py-3 text-center w-full">
       <TooltipProvider>
         <Tooltip>
           <TooltipTrigger asChild>
-            <div className="cursor-help">
-              <h1 className="text-3xl font-bold text-center mb-1">
-                {formatNumber(points)}
+            <div className="cursor-help mb-2">
+              <h1 className="text-2xl font-bold text-[#acb1b9]">
+                {formatNumber(points)}P
               </h1>
-              <h2 className="text-xl font-medium text-steamgifts-text-light mb-2">
-                points
-              </h2>
             </div>
           </TooltipTrigger>
           <TooltipContent side="right" className="p-0 bg-white">
@@ -72,11 +72,13 @@ const Stats: React.FC<StatsProps> = ({
         </Tooltip>
       </TooltipProvider>
       
-      <div className="mt-3 flex items-center justify-center text-steamgifts-text-light gap-1">
-        <MousePointerClick size={14} className="text-game-accent" />
-        <span className="font-medium text-lg">
-          {formatNumber(pointsPerSecond)}/second
-        </span>
+      <div className="flex items-center justify-center gap-4 text-[#acb1b9]">
+        <div className="flex items-center gap-1">
+          <span className="text-sm">+{formatNumber(pointsPerClick)}/click</span>
+        </div>
+        <div className="flex items-center gap-1">
+          <span className="text-sm">+{formatNumber(pointsPerSecond)}/sec</span>
+        </div>
       </div>
     </div>
   );

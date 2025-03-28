@@ -1,8 +1,33 @@
+
 import { useState, useEffect, useCallback } from 'react';
 import { toast } from "@/hooks/use-toast";
 import { GameState, Upgrade, Pet } from '@/types/gameState';
 import usePetsSystem, { initialPets } from './usePetsSystem';
 import useUpgradesSystem, { initialUpgrades } from './useUpgradesSystem';
+import { initialGames } from '@/lib/games';
+
+// Calculate XP needed for next level based on current level
+const calculateXpForLevel = (level: number): number => {
+  return Math.floor(100 * Math.pow(1.5, level - 1));
+};
+
+// Calculate level based on total XP
+const calculateLevelFromXp = (totalXp: number): { level: number; xp: number; xpToNextLevel: number } => {
+  let level = 1;
+  let xpRequired = calculateXpForLevel(level);
+  
+  while (totalXp >= xpRequired) {
+    totalXp -= xpRequired;
+    level++;
+    xpRequired = calculateXpForLevel(level);
+  }
+  
+  return {
+    level,
+    xp: totalXp,
+    xpToNextLevel: xpRequired
+  };
+};
 
 // Initial game state
 const initialGameState: GameState = {
@@ -15,7 +40,11 @@ const initialGameState: GameState = {
   pets: initialPets,
   lastSaved: new Date(),
   surgeTimeBonus: 0,
-  pointsMultiplier: 1.0
+  pointsMultiplier: 1.0,
+  level: 1,
+  xp: 0,
+  xpToNextLevel: calculateXpForLevel(1),
+  games: initialGames
 };
 
 // Hook to manage game state
@@ -42,6 +71,18 @@ export const useGameState = () => {
         }
         if (parsed.pointsMultiplier === undefined) {
           parsed.pointsMultiplier = 1.0;
+        }
+        
+        // Add level system if not present
+        if (parsed.level === undefined) {
+          parsed.level = 1;
+          parsed.xp = 0;
+          parsed.xpToNextLevel = calculateXpForLevel(1);
+        }
+        
+        // Add games if not present
+        if (!parsed.games) {
+          parsed.games = initialGames;
         }
         
         return parsed;
@@ -73,11 +114,63 @@ export const useGameState = () => {
   
   // Add points (from clicking or passive generation)
   const addPoints = useCallback((amount: number) => {
-    setGameState(prev => ({
-      ...prev,
-      points: prev.points + amount,
-      totalPoints: prev.totalPoints + amount,
-    }));
+    setGameState(prev => {
+      // Add XP equal to points earned
+      const newXp = prev.xp + amount;
+      let newLevel = prev.level;
+      let xpToNextLevel = prev.xpToNextLevel;
+      
+      // Check for level up
+      if (newXp >= xpToNextLevel) {
+        const levelInfo = calculateLevelFromXp(prev.xp + amount);
+        newLevel = levelInfo.level;
+        xpToNextLevel = levelInfo.xpToNextLevel;
+        
+        // Show toast message for level up if there was one
+        if (newLevel > prev.level) {
+          toast({
+            title: `Level Up!`,
+            description: `You are now level ${newLevel}!`
+          });
+          
+          // Check if any games got unlocked
+          const updatedGames = prev.games.map(game => {
+            if (!game.isUnlocked && 
+                game.unlockCondition.type === 'level' && 
+                typeof game.unlockCondition.value === 'number' &&
+                newLevel >= game.unlockCondition.value) {
+              
+              toast({
+                title: `New Game Unlocked!`,
+                description: `${game.name} is now available!`
+              });
+              
+              return { ...game, isUnlocked: true };
+            }
+            return game;
+          });
+          
+          return {
+            ...prev,
+            points: prev.points + amount,
+            totalPoints: prev.totalPoints + amount,
+            level: newLevel,
+            xp: levelInfo.xp,
+            xpToNextLevel,
+            games: updatedGames
+          };
+        }
+      }
+      
+      return {
+        ...prev,
+        points: prev.points + amount,
+        totalPoints: prev.totalPoints + amount,
+        xp: newXp,
+        level: newLevel,
+        xpToNextLevel
+      };
+    });
   }, []);
   
   // Handle clicking the main button, with an optional multiplier for SURGE MODE
@@ -96,18 +189,23 @@ export const useGameState = () => {
         surgeTrigger = Math.random() < petBonuses.surgeModeChance;
       }
       
-      // If pet triggered SURGE MODE, we'll handle it in the component
+      // Calculate XP gain (same as points)
+      const pointsGained = prev.pointsPerClick * totalMultiplier;
       
       return {
         ...prev,
-        points: prev.points + (prev.pointsPerClick * totalMultiplier),
-        totalPoints: prev.totalPoints + (prev.pointsPerClick * totalMultiplier),
+        points: prev.points + pointsGained,
+        totalPoints: prev.totalPoints + pointsGained,
         totalClicks: prev.totalClicks + 1,
         // Return surge trigger status in case we need it
         surgeTrigger: surgeTrigger
       };
     });
-  }, [calculatePetBonuses]);
+    
+    // Add XP based on points earned
+    const pointsEarned = gameState.pointsPerClick * (multiplier * (1 + calculatePetBonuses(gameState.pets).clickValueBoost));
+    addPoints(pointsEarned);
+  }, [calculatePetBonuses, addPoints, gameState.pointsPerClick, gameState.pets]);
   
   // Purchase an upgrade
   const purchaseUpgrade = useCallback((upgradeId: string) => {
@@ -152,8 +250,6 @@ export const useGameState = () => {
       
       // Recalculate pet bonuses after buying the upgrade
       const petBonuses = calculatePetBonuses(updatedPets);
-      
-      // Removed toast notification for upgrades
       
       const newState = {
         ...prev,
@@ -203,8 +299,6 @@ export const useGameState = () => {
       // Fix: Recalculate pointsPerClick with pet bonuses
       const newPointsPerClick = calculateNewClickValue(1, prev.upgrades);
       
-      // Removed toast notification for pet purchases
-      
       const newState = {
         ...prev,
         points: prev.points - pet.cost,
@@ -221,6 +315,32 @@ export const useGameState = () => {
       return newState;
     });
   }, [calculatePetBonuses, calculateNewClickValue]);
+  
+  // Update game unlock state based on achievements
+  const updateGameUnlocks = useCallback((unlockedAchievements: Set<string>) => {
+    setGameState(prev => {
+      const updatedGames = prev.games.map(game => {
+        if (!game.isUnlocked && 
+            game.unlockCondition.type === 'achievement' && 
+            typeof game.unlockCondition.value === 'string' &&
+            unlockedAchievements.has(game.unlockCondition.value)) {
+          
+          toast({
+            title: `New Game Unlocked!`,
+            description: `${game.name} is now available!`
+          });
+          
+          return { ...game, isUnlocked: true };
+        }
+        return game;
+      });
+      
+      return {
+        ...prev,
+        games: updatedGames
+      };
+    });
+  }, []);
   
   // Passive income generation with pet bonuses
   useEffect(() => {
@@ -271,6 +391,7 @@ export const useGameState = () => {
     resetGame,
     getSurgeTime,
     saveGameState,
+    updateGameUnlocks,
   };
 };
 
