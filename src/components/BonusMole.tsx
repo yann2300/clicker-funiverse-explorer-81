@@ -1,7 +1,7 @@
 
 import React from 'react';
 
-interface BonusMoleProps {
+export interface BonusMoleProps {
   position: {
     x: number;
     y: number;

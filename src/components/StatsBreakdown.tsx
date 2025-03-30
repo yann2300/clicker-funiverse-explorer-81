@@ -1,140 +1,55 @@
-
 import React from 'react';
-import { formatNumber } from '@/lib/gameUtils';
-import { BadgeCheck, BadgePercent, Zap, Activity, MousePointerClick } from 'lucide-react';
+import { GameState } from '@/types/gameState';
 
-interface StatsBreakdownProps {
-  rawPointsPerClick: number;
-  rawPointsPerSecond: number;
-  pointsMultiplier: number;
-  clickValueBoost: number;
-  passiveBoost: number;
-  surgeModeChance: number;
-  surgeTimeBonus: number;
-  surgeMode?: boolean;
-  totalClicks?: number;
-  totalPoints?: number;
+export interface StatsBreakdownProps {
+  rawStats: {
+    pointsPerClick: number;
+    pointsPerSecond: number;
+  };
+  gameState: GameState;
 }
 
-const StatsBreakdown: React.FC<StatsBreakdownProps> = ({
-  rawPointsPerClick,
-  rawPointsPerSecond,
-  pointsMultiplier,
-  clickValueBoost,
-  passiveBoost,
-  surgeModeChance,
-  surgeTimeBonus,
-  surgeMode = false,
-  totalClicks = 0,
-  totalPoints = 0
-}) => {
-  // Calculate the bonus amounts
-  const clickBonus = rawPointsPerClick * clickValueBoost;
-  const passiveBonus = rawPointsPerSecond * passiveBoost;
+const StatsBreakdown = ({ rawStats, gameState }: StatsBreakdownProps) => {
+  const { pointsPerClick, pointsPerSecond } = rawStats;
+  const { pointsMultiplier, clickValueBoost, passiveBoost } = gameState;
   
-  // Define a helper function for displaying stat rows
-  const StatRow = ({ label, value, rawValue, icon }: { 
-    label: string, 
-    value: number,
-    rawValue: number,
-    icon: React.ReactNode,
-  }) => (
-    <div className="flex items-center justify-between py-1 border-b border-game-neutral-dark/10 last:border-0">
-      <div className="flex items-center gap-2">
-        {icon}
-        <span className="text-sm font-medium">{label}</span>
-      </div>
-      <div className="flex items-center gap-1">
-        <span className="text-sm font-semibold">{formatNumber(value)}</span>
-        {value !== rawValue && (
-          <span className="text-xs text-green-600">
-            (+{formatNumber(value - rawValue)})
-          </span>
-        )}
-      </div>
-    </div>
-  );
-
+  // Calculate total click value boost percentage
+  const totalClickBoost = (clickValueBoost) * 100;
+  
+  // Calculate total passive boost percentage
+  const totalPassiveBoost = (passiveBoost) * 100;
+  
   return (
-    <div className="glass-panel p-4 space-y-4 rounded-md">
-      <div className="flex items-center justify-between mb-2">
-        <h3 className="text-base font-semibold">Stats Breakdown</h3>
-        {surgeMode && (
-          <span className="text-xs py-0.5 px-2 bg-red-500 text-white rounded-full animate-pulse flex items-center gap-1">
-            <Zap size={10} className="text-yellow-300" />
-            SURGE MODE (2x)
-          </span>
-        )}
+    <div className="bg-white rounded-lg p-4 shadow-md">
+      <h2 className="font-bold text-lg mb-2 text-gray-700">Stats Breakdown</h2>
+      
+      <div className="mb-2">
+        <h3 className="font-medium text-md text-gray-700">Clicking</h3>
+        <p className="text-sm text-gray-500">
+          Base Points per Click: {pointsPerClick}
+        </p>
+        <p className="text-sm text-gray-500">
+          Click Value Boost from Pets: +{totalClickBoost.toFixed(0)}%
+        </p>
+        <p className="text-sm text-gray-500">
+          Total Points per Click: {(pointsPerClick * (1 + clickValueBoost)).toFixed(2)}
+        </p>
       </div>
       
-      <div className="space-y-1">
-        <StatRow 
-          label="Points per Click" 
-          value={rawPointsPerClick * (1 + clickValueBoost) * pointsMultiplier * (surgeMode ? 2 : 1)} 
-          rawValue={rawPointsPerClick}
-          icon={<MousePointerClick size={16} className="text-game-accent" />}
-        />
-        
-        <StatRow 
-          label="Points per Second" 
-          value={rawPointsPerSecond * (1 + passiveBoost) * pointsMultiplier * (surgeMode ? 2 : 1)} 
-          rawValue={rawPointsPerSecond}
-          icon={<Activity size={16} className="text-amber-500" />}
-        />
-      </div>
-      
-      <div className="mt-3 pt-2 border-t border-game-neutral-dark/10">
-        <h4 className="text-sm font-medium mb-2">Totals</h4>
-        <div className="space-y-1">
-          <div className="flex justify-between items-center">
-            <span className="text-sm text-steamgifts-text-light">Total Clicks:</span>
-            <span className="text-sm font-medium">{formatNumber(totalClicks)}</span>
-          </div>
-          <div className="flex justify-between items-center">
-            <span className="text-sm text-steamgifts-text-light">Total Points Earned:</span>
-            <span className="text-sm font-medium">{formatNumber(totalPoints)}</span>
-          </div>
-        </div>
-      </div>
-      
-      <div className="mt-3 pt-2 border-t border-game-neutral-dark/10">
-        <h4 className="text-sm font-medium mb-2">Active Bonuses</h4>
-        <div className="grid grid-cols-2 gap-2">
-          {pointsMultiplier > 1 && (
-            <div className="flex items-center gap-1 text-xs bg-game-neutral-dark/5 p-1 rounded">
-              <BadgePercent size={12} className="text-blue-500" />
-              <span>+{((pointsMultiplier - 1) * 100).toFixed(0)}% Points</span>
-            </div>
-          )}
-          
-          {clickValueBoost > 0 && (
-            <div className="flex items-center gap-1 text-xs bg-game-neutral-dark/5 p-1 rounded">
-              <BadgePercent size={12} className="text-purple-500" />
-              <span>+{(clickValueBoost * 100).toFixed(0)}% Click</span>
-            </div>
-          )}
-          
-          {passiveBoost > 0 && (
-            <div className="flex items-center gap-1 text-xs bg-game-neutral-dark/5 p-1 rounded">
-              <BadgePercent size={12} className="text-green-500" />
-              <span>+{(passiveBoost * 100).toFixed(0)}% Passive</span>
-            </div>
-          )}
-          
-          {surgeTimeBonus > 0 && (
-            <div className="flex items-center gap-1 text-xs bg-game-neutral-dark/5 p-1 rounded">
-              <Zap size={12} className="text-yellow-500" />
-              <span>+{surgeTimeBonus}s Surge</span>
-            </div>
-          )}
-          
-          {surgeModeChance > 0 && (
-            <div className="flex items-center gap-1 text-xs bg-game-neutral-dark/5 p-1 rounded">
-              <BadgeCheck size={12} className="text-red-500" />
-              <span>{(surgeModeChance * 100).toFixed(0)}% Surge Chance</span>
-            </div>
-          )}
-        </div>
+      <div>
+        <h3 className="font-medium text-md text-gray-700">Passive Income</h3>
+        <p className="text-sm text-gray-500">
+          Base Points per Second: {pointsPerSecond}
+        </p>
+        <p className="text-sm text-gray-500">
+          Passive Boost from Pets: +{totalPassiveBoost.toFixed(0)}%
+        </p>
+        <p className="text-sm text-gray-500">
+          Points Multiplier: x{pointsMultiplier.toFixed(2)}
+        </p>
+        <p className="text-sm text-gray-500">
+          Total Points per Second: {(pointsPerSecond * pointsMultiplier * (1 + passiveBoost)).toFixed(2)}
+        </p>
       </div>
     </div>
   );

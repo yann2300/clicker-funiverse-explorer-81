@@ -1,199 +1,211 @@
-
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Button } from "@/components/ui/button";
 
 export interface NonogramGameProps {
-  isOpen?: boolean;
-  onClose?: () => void;
   onSolve: () => void;
+  isOpen: boolean;
+  onClose: () => void;
 }
 
-const NonogramGame: React.FC<NonogramGameProps> = ({ onSolve }) => {
-  // Use dummy isOpen and onClose props that aren't used in the implementation
-  // but are needed for the type definition
-  const [grid, setGrid] = useState<number[][]>([]);
-  const [selectedCell, setSelectedCell] = useState<{row: number, col: number} | null>(null);
+const NonogramGame = ({ onSolve }: NonogramGameProps) => {
+  const [grid, setGrid] = useState<boolean[][]>([]);
+  const [rows, setRows] = useState<number[][]>([]);
+  const [cols, setCols] = useState<number[][]>([]);
+  const [size, setSize] = useState(5);
   const [solved, setSolved] = useState(false);
-  const size = 5; // 5x5 grid for simplicity
-  
-  // Initialize the grid with a simple pattern
-  useEffect(() => {
-    const pattern = [
-      [1, 1, 0, 1, 1],
-      [1, 0, 0, 0, 1],
-      [0, 0, 1, 0, 0],
-      [1, 0, 0, 0, 1],
-      [1, 1, 0, 1, 1]
-    ];
+
+  const generatePuzzle = useCallback((newSize: number) => {
+    setSize(newSize);
+    setSolved(false);
     
-    // Start with an empty player grid
-    const newGrid = Array(size).fill(0).map(() => Array(size).fill(0));
-    setGrid(newGrid);
+    // Generate a random solution
+    const solution: boolean[][] = Array(newSize).fill(null).map(() =>
+      Array(newSize).fill(null).map(() => Math.random() > 0.5)
+    );
+    
+    // Calculate row clues
+    const rowClues: number[][] = solution.map(row => {
+      const clues: number[] = [];
+      let currentRun = 0;
+      row.forEach(cell => {
+        if (cell) {
+          currentRun++;
+        } else {
+          if (currentRun > 0) {
+            clues.push(currentRun);
+            currentRun = 0;
+          }
+        }
+      });
+      if (currentRun > 0) {
+        clues.push(currentRun);
+      }
+      return clues.length === 0 ? [0] : clues;
+    });
+    
+    // Calculate column clues
+    const colClues: number[][] = Array(newSize).fill(null).map((_, colIndex) => {
+      const clues: number[] = [];
+      let currentRun = 0;
+      for (let i = 0; i < newSize; i++) {
+        if (solution[i][colIndex]) {
+          currentRun++;
+        } else {
+          if (currentRun > 0) {
+            clues.push(currentRun);
+            currentRun = 0;
+          }
+        }
+      }
+      if (currentRun > 0) {
+        clues.push(currentRun);
+      }
+      return clues.length === 0 ? [0] : clues;
+    });
+    
+    // Initialize the grid with all cells empty
+    const initialGrid: boolean[][] = Array(newSize).fill(null).map(() =>
+      Array(newSize).fill(false)
+    );
+    
+    setGrid(initialGrid);
+    setRows(rowClues);
+    setCols(colClues);
   }, []);
-  
-  // Toggle a cell
+
+  useEffect(() => {
+    generatePuzzle(size);
+  }, [generatePuzzle, size]);
+
   const toggleCell = (row: number, col: number) => {
     if (solved) return;
-    
-    setGrid(prev => {
-      const newGrid = [...prev];
-      newGrid[row] = [...prev[row]];
-      newGrid[row][col] = newGrid[row][col] === 0 ? 1 : 0;
-      
-      // Check if solved
-      setTimeout(checkSolution, 100);
-      
+    setGrid(prevGrid => {
+      const newGrid = prevGrid.map((rowArray, rowIndex) =>
+        rowIndex === row ? rowArray.map((cell, colIndex) => (colIndex === col ? !cell : cell)) : rowArray
+      );
       return newGrid;
     });
   };
-  
-  // Check if the puzzle is solved
+
   const checkSolution = () => {
-    // Hard-coded solution for this simple nonogram
-    const solution = [
-      [1, 1, 0, 1, 1],
-      [1, 0, 0, 0, 1],
-      [0, 0, 1, 0, 0],
-      [1, 0, 0, 0, 1],
-      [1, 1, 0, 1, 1]
-    ];
-    
-    const isSolved = grid.every((row, rowIndex) => 
-      row.every((cell, colIndex) => cell === solution[rowIndex][colIndex])
-    );
-    
-    if (isSolved) {
-      setSolved(true);
-      setTimeout(() => {
-        onSolve();
-      }, 1000);
-    }
-  };
-  
-  // Generate row hints
-  const getRowHints = (row: number) => {
-    const solution = [
-      [1, 1, 0, 1, 1],
-      [1, 0, 0, 0, 1],
-      [0, 0, 1, 0, 0],
-      [1, 0, 0, 0, 1],
-      [1, 1, 0, 1, 1]
-    ];
-    
-    const rowData = solution[row];
-    const hints = [];
-    let count = 0;
-    
-    for (let i = 0; i < rowData.length; i++) {
-      if (rowData[i] === 1) {
-        count++;
-      } else if (count > 0) {
-        hints.push(count);
-        count = 0;
-      }
-    }
-    
-    if (count > 0) {
-      hints.push(count);
-    }
-    
-    return hints.length > 0 ? hints.join(' ') : '0';
-  };
-  
-  // Generate column hints
-  const getColHints = (col: number) => {
-    const solution = [
-      [1, 1, 0, 1, 1],
-      [1, 0, 0, 0, 1],
-      [0, 0, 1, 0, 0],
-      [1, 0, 0, 0, 1],
-      [1, 1, 0, 1, 1]
-    ];
-    
-    const hints = [];
-    let count = 0;
-    
+    let isCorrect = true;
     for (let i = 0; i < size; i++) {
-      if (solution[i][col] === 1) {
-        count++;
-      } else if (count > 0) {
-        hints.push(count);
-        count = 0;
+      let rowRun = 0;
+      let colRun = 0;
+      let rowClueIndex = 0;
+      let colClueIndex = 0;
+
+      for (let j = 0; j < size; j++) {
+        if (grid[i][j]) {
+          rowRun++;
+        } else {
+          if (rowRun > 0) {
+            if (rows[i][rowClueIndex] !== rowRun) {
+              isCorrect = false;
+              break;
+            }
+            rowClueIndex++;
+            rowRun = 0;
+          }
+        }
+
+        if (grid[j][i]) {
+          colRun++;
+        } else {
+          if (colRun > 0) {
+            if (cols[i][colClueIndex] !== colRun) {
+              isCorrect = false;
+              break;
+            }
+            colClueIndex++;
+            colRun = 0;
+          }
+        }
       }
+
+      if (rowRun > 0) {
+        if (rows[i][rowClueIndex] !== rowRun) {
+          isCorrect = false;
+          break;
+        }
+        rowClueIndex++;
+      }
+
+      if (colRun > 0) {
+        if (cols[i][colClueIndex] !== colRun) {
+          isCorrect = false;
+          break;
+        }
+        colClueIndex++;
+      }
+
+      if (rowClueIndex !== rows[i].length || colClueIndex !== cols[i].length) {
+        isCorrect = false;
+        break;
+      }
+
+      if (!isCorrect) break;
     }
-    
-    if (count > 0) {
-      hints.push(count);
+
+    if (isCorrect) {
+      setSolved(true);
+      onSolve();
+    } else {
+      alert("Incorrect solution. Try again!");
     }
-    
-    return hints.length > 0 ? hints.join(' ') : '0';
   };
-  
+
   return (
-    <div className="p-4">
-      <div className="mb-4 text-center">
-        <p className="text-sm text-gray-500 mb-2">
-          Fill in the grid according to the clues to reveal the pattern.
-        </p>
-        {solved && (
-          <p className="text-green-600 font-bold animate-pulse">
-            Puzzle solved! +10,000 points
-          </p>
-        )}
+    <div className="flex flex-col items-center">
+      <div className="flex space-x-4 mb-4">
+        <Button onClick={() => generatePuzzle(5)}>5x5</Button>
+        <Button onClick={() => generatePuzzle(10)}>10x10</Button>
+        <Button onClick={() => generatePuzzle(15)}>15x15</Button>
       </div>
       
-      <div className="flex justify-center">
-        <div className="grid grid-rows-6 grid-cols-6 gap-1">
-          {/* Empty top-left cell */}
-          <div className="w-8 h-8"></div>
-          
-          {/* Column hints */}
-          {Array(size).fill(0).map((_, col) => (
-            <div key={`col-${col}`} className="w-8 h-8 flex items-center justify-center bg-gray-100 text-xs font-mono">
-              {getColHints(col)}
+      <div className="flex">
+        {/* Column Clues */}
+        <div className="mr-2">
+          {cols.map((col, index) => (
+            <div key={`colClue-${index}`} className="flex flex-col items-end h-full justify-end">
+              {col.map((clue, i) => (
+                <span key={`colClue-${index}-${i}`} className="text-xs text-gray-700">{clue}</span>
+              ))}
             </div>
           ))}
-          
-          {/* Row hints and grid */}
-          {Array(size).fill(0).map((_, row) => (
-            <React.Fragment key={`row-${row}`}>
-              {/* Row hint */}
-              <div className="w-8 h-8 flex items-center justify-center bg-gray-100 text-xs font-mono">
-                {getRowHints(row)}
-              </div>
-              
-              {/* Grid cells */}
-              {Array(size).fill(0).map((_, col) => (
-                <div 
-                  key={`${row}-${col}`}
-                  onClick={() => toggleCell(row, col)}
-                  className={`w-8 h-8 border cursor-pointer ${
-                    grid[row]?.[col] === 1 ? 'bg-black' : 'bg-white'
-                  } ${
-                    selectedCell?.row === row && selectedCell?.col === col 
-                      ? 'ring-2 ring-blue-500' 
-                      : ''
-                  }`}
-                ></div>
+        </div>
+        
+        {/* Grid */}
+        <div>
+          {grid.map((row, rowIndex) => (
+            <div key={`row-${rowIndex}`} className="flex">
+              {row.map((cell, colIndex) => (
+                <div
+                  key={`cell-${rowIndex}-${colIndex}`}
+                  className={`w-6 h-6 border border-gray-300 cursor-pointer flex items-center justify-center ${cell ? 'bg-gray-800' : 'bg-white'}`}
+                  onClick={() => toggleCell(rowIndex, colIndex)}
+                >
+                </div>
               ))}
-            </React.Fragment>
+            </div>
+          ))}
+        </div>
+        
+        {/* Row Clues */}
+        <div className="ml-2">
+          {rows.map((row, index) => (
+            <div key={`rowClue-${index}`} className="flex items-center h-6">
+              {row.map((clue, i) => (
+                <span key={`rowClue-${index}-${i}`} className="text-xs text-gray-700 mr-1">{clue}</span>
+              ))}
+            </div>
           ))}
         </div>
       </div>
-      
-      <div className="mt-4 flex justify-center">
-        <Button 
-          onClick={() => {
-            setGrid(Array(size).fill(0).map(() => Array(size).fill(0)));
-            setSolved(false);
-          }}
-          disabled={solved}
-          variant="outline"
-          size="sm"
-        >
-          Reset
-        </Button>
-      </div>
+
+      <Button onClick={checkSolution} disabled={solved} className="mt-4">
+        {solved ? "Solved!" : "Check Solution"}
+      </Button>
     </div>
   );
 };
