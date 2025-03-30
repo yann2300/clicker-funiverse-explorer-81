@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import ClickerButton from './ClickerButton';
 import UpgradeShop from './UpgradeShop';
@@ -19,6 +20,10 @@ import JigsawPuzzle from './JigsawPuzzle';
 import DayProgress from './LevelProgress';
 import EventRecap from './EventRecap';
 import { formatNumber } from '@/lib/gameUtils';
+import GameHeader from './GameHeader';
+import BonusMole from './BonusMole';
+import GameBonus from './GameBonus';
+import AchievementSystem from './AchievementSystem';
 
 // Generate placeholder users for the steamgifts list
 const placeholderUsers = Array(30).fill(0).map((_, i) => ({
@@ -631,7 +636,7 @@ const GameContainer = () => {
       zIndex: 100,
       cursor: 'pointer',
       transition: 'all 1s ease-out',
-    };
+    } as const;
     
     // Determine offsets based on corner
     let x = bonusPosition.x;
@@ -673,7 +678,7 @@ const GameContainer = () => {
       color: '#FFD700',
       filter: 'drop-shadow(0 0 4px rgba(255, 215, 0, 0.5))',
       animation: 'pulse-subtle 2s infinite ease-in-out'
-    };
+    } as const;
   };
   
   // Get puzzle styles
@@ -689,7 +694,7 @@ const GameContainer = () => {
       color: '#4CAF50',
       filter: 'drop-shadow(0 0 4px rgba(76, 175, 80, 0.5))',
       animation: 'pulse-subtle 2s infinite ease-in-out'
-    };
+    } as const;
   };
   
   return (
@@ -794,15 +799,131 @@ const GameContainer = () => {
         </div>
       </div>
       
-      {/* Event Recap section */}
-      <div className="mb-4">
-        <EventRecap day={gameState.day} username="" />
+      {/* Event Recap section with progress bar moved below it */}
+      <div className="mb-4 space-y-2">
+        <EventRecap day={gameState.day} />
+        
+        {/* Day progress bar moved here */}
+        <DayProgress 
+          day={gameState.day} 
+          dayProgress={gameState.dayProgress}
+          pointsToNextDay={gameState.pointsToNextDay}
+        />
       </div>
       
-      {/* Main content */}
+      {/* Main content with modified grid to give more space to upgrades */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {/* Left column - Clicker */}
-        <div className="md:col-span-2 space-y-4">
-          {/* Clicker panel */}
-          <div className="rounded-md overflow-hidden shadow-md" style={{ backgroundImage: 'linear-gradient(#515763 0%, #2f3540 100%)' }}>
-            <div className="p-
+        <div>
+          <div className="glass-panel rounded-2xl overflow-hidden mb-4">
+            <Stats 
+              points={gameState.points}
+              pointsPerClick={gameState.pointsPerClick}
+              pointsPerSecond={gameState.pointsPerSecond}
+              totalClicks={gameState.totalClicks}
+              totalPoints={gameState.totalPoints}
+              rawPointsPerClick={rawStats.pointsPerClick}
+              rawPointsPerSecond={rawStats.pointsPerSecond}
+              pointsMultiplier={gameState.pointsMultiplier}
+              surgeTimeBonus={gameState.surgeTimeBonus}
+              clickValueBoost={gameState.clickValueBoost}
+              passiveBoost={gameState.passiveBoost}
+              surgeModeChance={gameState.surgeModeChance}
+              surgeMode={surgeMode}
+              level={gameState.day}
+            />
+            
+            <div className="p-4">
+              <ClickerButton 
+                onClick={handleGameClick}
+                pointsPerClick={gameState.pointsPerClick}
+                surgeMode={surgeMode}
+                surgeModeTimeLeft={surgeModeTimeLeft}
+                playSound={soundEnabled}
+              />
+            </div>
+          </div>
+          
+          {/* Achievements sidebar */}
+          <AchievementsSidebar 
+            isOpen={isSidebarOpen} 
+            onClose={() => setIsSidebarOpen(false)}
+            achievements={localAchievements}
+          />
+          
+          {/* Bonus mole */}
+          {showBonus && (
+            <div
+              onClick={handleBonusClick}
+              style={getBonusStyles()}
+            >
+              <img
+                src="https://s3.eu-west-2.amazonaws.com/img.creativepool.com/files/candidate/portfolio/full/752444.png"
+                alt="Bonus"
+                className="w-full h-full object-contain"
+              />
+            </div>
+          )}
+          
+          {/* Nonogram star bonus */}
+          {showStar && (
+            <div
+              onClick={handleStarClick}
+              style={getStarStyles()}
+            >
+              <Star size={40} />
+            </div>
+          )}
+          
+          {/* Jigsaw puzzle bonus */}
+          {showPuzzleIcon && (
+            <div
+              onClick={handlePuzzleClick}
+              style={getPuzzleStyles()}
+            >
+              <Puzzle size={40} />
+            </div>
+          )}
+          
+          {/* Nonogram game dialog */}
+          <Dialog open={isNonogramOpen} onOpenChange={setIsNonogramOpen}>
+            <DialogContent className="sm:max-w-2xl">
+              <DialogHeader>
+                <DialogTitle>Nonogram Puzzle</DialogTitle>
+                <DialogDescription>
+                  Solve the nonogram to earn points!
+                </DialogDescription>
+              </DialogHeader>
+              <NonogramGame onSolve={handleNonogramSolve} />
+            </DialogContent>
+          </Dialog>
+          
+          {/* Jigsaw puzzle dialog */}
+          <Dialog open={isJigsawOpen} onOpenChange={setIsJigsawOpen}>
+            <DialogContent className="sm:max-w-4xl">
+              <DialogHeader>
+                <DialogTitle>Jigsaw Puzzle</DialogTitle>
+                <DialogDescription>
+                  Complete the jigsaw puzzle to earn points!
+                </DialogDescription>
+              </DialogHeader>
+              <JigsawPuzzle onSolve={handleJigsawSolve} />
+            </DialogContent>
+          </Dialog>
+        </div>
+        
+        {/* Middle and right columns - Upgrades */}
+        <div className="md:col-span-2">
+          <UpgradeShop 
+            gameState={gameState}
+            onPurchase={purchaseUpgrade}
+            onPetPurchase={purchasePet}
+            calculateUpgradeCost={calculateUpgradeCost}
+          />
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default GameContainer;
