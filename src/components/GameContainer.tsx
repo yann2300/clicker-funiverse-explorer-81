@@ -808,4 +808,5 @@ const GameContainer = () => {
       
       {/* Main content with modified grid to give more space to upgrades */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {/* Left column - Clicker (now taking
+        {/* Left column - Clicker */}
+        <div className

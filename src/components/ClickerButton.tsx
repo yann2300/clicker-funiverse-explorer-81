@@ -37,7 +37,7 @@ const ClickerButton = ({
         id: idCounter.current++,
         x,
         y,
-        value: pointsPerClick
+        value: pointsPerClick || 1 // Ensure value is never undefined
       };
       
       setFloatingTexts(prev => [...prev, newFloatingText]);
@@ -85,7 +85,7 @@ const ClickerButton = ({
             className="float-text text-white font-medium text-lg"
             style={{ left: `${text.x}px`, top: `${text.y}px` }}
           >
-            +{text.value ? formatNumber(text.value) : '0'}
+            +{formatNumber(text.value)}
           </div>
         ))}
       </button>
