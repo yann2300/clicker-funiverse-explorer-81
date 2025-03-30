@@ -20,10 +20,6 @@ import JigsawPuzzle from './JigsawPuzzle';
 import DayProgress from './LevelProgress';
 import EventRecap from './EventRecap';
 import { formatNumber } from '@/lib/gameUtils';
-import GameHeader from './GameHeader';
-import BonusMole from './BonusMole';
-import GameBonus from './GameBonus';
-import AchievementSystem from './AchievementSystem';
 
 // Generate placeholder users for the steamgifts list
 const placeholderUsers = Array(30).fill(0).map((_, i) => ({
@@ -799,129 +795,102 @@ const GameContainer = () => {
         </div>
       </div>
       
-      {/* Event Recap section with progress bar moved below it */}
-      <div className="mb-4 space-y-2">
+      {/* Event Recap section */}
+      <div className="mb-4">
         <EventRecap day={gameState.day} />
-        
-        {/* Day progress bar moved here */}
-        <DayProgress 
-          day={gameState.day} 
-          dayProgress={gameState.dayProgress}
-          pointsToNextDay={gameState.pointsToNextDay}
-        />
       </div>
       
-      {/* Main content with modified grid to give more space to upgrades */}
+      {/* Main content */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {/* Left column - Clicker */}
-        <div>
-          <div className="glass-panel rounded-2xl overflow-hidden mb-4">
-            <Stats 
-              points={gameState.points}
-              pointsPerClick={gameState.pointsPerClick}
-              pointsPerSecond={gameState.pointsPerSecond}
-              totalClicks={gameState.totalClicks}
-              totalPoints={gameState.totalPoints}
-              rawPointsPerClick={rawStats.pointsPerClick}
-              rawPointsPerSecond={rawStats.pointsPerSecond}
-              pointsMultiplier={gameState.pointsMultiplier}
-              surgeTimeBonus={gameState.surgeTimeBonus}
-              clickValueBoost={gameState.clickValueBoost}
-              passiveBoost={gameState.passiveBoost}
-              surgeModeChance={gameState.surgeModeChance}
-              surgeMode={surgeMode}
-              level={gameState.day}
+        <div className="md:col-span-2 space-y-4">
+          {/* Clicker panel */}
+          <div className="rounded-md overflow-hidden shadow-md" style={{ backgroundImage: 'linear-gradient(#515763 0%, #2f3540 100%)' }}>
+            {/* Add ClickerButton and other components here */}
+            <ClickerButton 
+              onClick={handleGameClick} 
+              surgeMode={surgeMode} 
+              surgeModeTimeLeft={surgeModeTimeLeft} 
             />
-            
-            <div className="p-4">
-              <ClickerButton 
-                onClick={handleGameClick}
-                pointsPerClick={gameState.pointsPerClick}
-                surgeMode={surgeMode}
-                surgeModeTimeLeft={surgeModeTimeLeft}
-                playSound={soundEnabled}
-              />
-            </div>
           </div>
           
-          {/* Achievements sidebar */}
-          <AchievementsSidebar 
-            isOpen={isSidebarOpen} 
-            onClose={() => setIsSidebarOpen(false)}
-            achievements={localAchievements}
+          {/* Stats panel */}
+          <Stats 
+            points={gameState.points} 
+            pointsPerClick={gameState.pointsPerClick} 
+            pointsPerSecond={gameState.pointsPerSecond} 
+            totalClicks={gameState.totalClicks} 
+            day={gameState.day}
+            rawStats={rawStats}
           />
           
-          {/* Bonus mole */}
-          {showBonus && (
-            <div
-              onClick={handleBonusClick}
-              style={getBonusStyles()}
-            >
-              <img
-                src="https://s3.eu-west-2.amazonaws.com/img.creativepool.com/files/candidate/portfolio/full/752444.png"
-                alt="Bonus"
-                className="w-full h-full object-contain"
-              />
-            </div>
+          {/* Day progress bar */}
+          <DayProgress 
+            day={gameState.day} 
+            dayProgress={gameState.dayProgress}
+            pointsToNextDay={gameState.pointsToNextDay}
+          />
+          
+          {/* Conditional rendering for mini-games */}
+          {isNonogramOpen && (
+            <NonogramGame 
+              onClose={() => setIsNonogramOpen(false)} 
+              onSolve={handleNonogramSolve} 
+            />
           )}
           
-          {/* Nonogram star bonus */}
-          {showStar && (
-            <div
-              onClick={handleStarClick}
-              style={getStarStyles()}
-            >
-              <Star size={40} />
-            </div>
+          {isJigsawOpen && (
+            <JigsawPuzzle 
+              onClose={() => setIsJigsawOpen(false)} 
+              onSolve={handleJigsawSolve} 
+            />
           )}
-          
-          {/* Jigsaw puzzle bonus */}
-          {showPuzzleIcon && (
-            <div
-              onClick={handlePuzzleClick}
-              style={getPuzzleStyles()}
-            >
-              <Puzzle size={40} />
-            </div>
-          )}
-          
-          {/* Nonogram game dialog */}
-          <Dialog open={isNonogramOpen} onOpenChange={setIsNonogramOpen}>
-            <DialogContent className="sm:max-w-2xl">
-              <DialogHeader>
-                <DialogTitle>Nonogram Puzzle</DialogTitle>
-                <DialogDescription>
-                  Solve the nonogram to earn points!
-                </DialogDescription>
-              </DialogHeader>
-              <NonogramGame onSolve={handleNonogramSolve} />
-            </DialogContent>
-          </Dialog>
-          
-          {/* Jigsaw puzzle dialog */}
-          <Dialog open={isJigsawOpen} onOpenChange={setIsJigsawOpen}>
-            <DialogContent className="sm:max-w-4xl">
-              <DialogHeader>
-                <DialogTitle>Jigsaw Puzzle</DialogTitle>
-                <DialogDescription>
-                  Complete the jigsaw puzzle to earn points!
-                </DialogDescription>
-              </DialogHeader>
-              <JigsawPuzzle onSolve={handleJigsawSolve} />
-            </DialogContent>
-          </Dialog>
         </div>
         
-        {/* Middle and right columns - Upgrades */}
-        <div className="md:col-span-2">
+        {/* Right column - Upgrades */}
+        <div className="space-y-4">
           <UpgradeShop 
-            gameState={gameState}
-            onPurchase={purchaseUpgrade}
-            onPetPurchase={purchasePet}
-            calculateUpgradeCost={calculateUpgradeCost}
+            gameState={gameState} 
+            onPurchase={purchaseUpgrade} 
+            onPetPurchase={purchasePet} 
+            calculateUpgradeCost={calculateUpgradeCost} 
           />
         </div>
       </div>
+      
+      {/* Special bonus elements */}
+      {showBonus && (
+        <div 
+          style={getBonusStyles()} 
+          onClick={handleBonusClick}
+          className="bg-red-500 rounded-full animate-pulse"
+        ></div>
+      )}
+      
+      {showStar && (
+        <div 
+          style={getStarStyles()} 
+          onClick={handleStarClick}
+        >
+          <Star size={40} />
+        </div>
+      )}
+      
+      {showPuzzleIcon && (
+        <div 
+          style={getPuzzleStyles()} 
+          onClick={handlePuzzleClick}
+        >
+          <Puzzle size={40} />
+        </div>
+      )}
+      
+      {/* Achievements sidebar */}
+      <AchievementsSidebar 
+        isOpen={isSidebarOpen} 
+        onClose={() => setIsSidebarOpen(false)} 
+        achievements={localAchievements} 
+      />
     </div>
   );
 };
