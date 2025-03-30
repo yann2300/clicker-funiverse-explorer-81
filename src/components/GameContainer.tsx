@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import ClickerButton from './ClickerButton';
 import UpgradeShop from './UpgradeShop';
@@ -797,7 +796,7 @@ const GameContainer = () => {
       
       {/* Event Recap section */}
       <div className="mb-4">
-        <EventRecap day={gameState.day} username="" />
+        <EventRecap day={gameState.day} />
       </div>
       
       {/* Main content */}
@@ -806,119 +805,3 @@ const GameContainer = () => {
         <div className="md:col-span-2 space-y-4">
           {/* Clicker panel */}
           <div className="rounded-md overflow-hidden shadow-md" style={{ backgroundImage: 'linear-gradient(#515763 0%, #2f3540 100%)' }}>
-            <div className="p-4 flex flex-col items-center justify-center">
-              <h2 className="text-xl font-semibold text-[#acb1b9] mb-4">
-                SG Clicker: a small grind to get them giveaways!
-              </h2>
-              <ClickerButton 
-                onClick={handleGameClick} 
-                surgeMode={surgeMode} 
-                surgeModeTimeLeft={surgeModeTimeLeft}
-              />
-            </div>
-            <Stats 
-              points={gameState.points}
-              pointsPerClick={gameState.pointsPerClick}
-              pointsPerSecond={gameState.pointsPerSecond}
-              totalClicks={gameState.totalClicks}
-              totalPoints={gameState.totalPoints}
-              rawPointsPerClick={rawStats.pointsPerClick}
-              rawPointsPerSecond={rawStats.pointsPerSecond}
-              pointsMultiplier={gameState.pointsMultiplier}
-              surgeTimeBonus={gameState.surgeTimeBonus}
-              clickValueBoost={calculatePetBonuses(gameState.pets).clickValueBoost}
-              passiveBoost={calculatePetBonuses(gameState.pets).passiveBoost}
-              surgeModeChance={calculatePetBonuses(gameState.pets).surgeModeChance}
-              surgeMode={surgeMode}
-              level={gameState.day}
-            />
-          </div>
-        
-          {/* Day progress panel */}
-          <div className="rounded-md overflow-hidden shadow-md bg-[#2f3540] p-4">
-            <h3 className="text-lg font-semibold text-[#acb1b9] mb-2">Day Progress</h3>
-            <DayProgress 
-              day={gameState.day} 
-              dayProgress={gameState.dayProgress} 
-              pointsToNextDay={gameState.pointsToNextDay} 
-            />
-          </div>
-        </div>
-      
-        {/* Right column - Upgrades */}
-        <div className="md:col-span-1">
-          <UpgradeShop 
-            points={gameState.points} 
-            upgrades={gameState.upgrades} 
-            pets={gameState.pets}
-            onUpgradePurchase={purchaseUpgrade}
-            onPetPurchase={purchasePet}
-            calculateUpgradeCost={calculateUpgradeCost}
-          />
-        </div>
-      </div>
-      
-      {/* Achievement sidebar */}
-      <AchievementsSidebar 
-        isOpen={isSidebarOpen} 
-        onClose={() => setIsSidebarOpen(false)}
-        achievements={localAchievements}
-      />
-      
-      {/* Bonus mole */}
-      {showBonus && (
-        <div 
-          style={getBonusStyles() as React.CSSProperties} 
-          onClick={handleBonusClick}
-          className="animate-bounce bg-yellow-500 rounded-full"
-        ></div>
-      )}
-      
-      {/* Star for nonogram game */}
-      {showStar && (
-        <div style={getStarStyles() as React.CSSProperties} onClick={handleStarClick}>
-          <Star size={40} />
-        </div>
-      )}
-      
-      {/* Puzzle icon for jigsaw game */}
-      {showPuzzleIcon && (
-        <div style={getPuzzleStyles() as React.CSSProperties} onClick={handlePuzzleClick}>
-          <Puzzle size={40} />
-        </div>
-      )}
-      
-      {/* Nonogram game modal */}
-      {isNonogramOpen && (
-        <Dialog open={isNonogramOpen} onOpenChange={setIsNonogramOpen}>
-          <DialogContent className="sm:max-w-3xl">
-            <DialogHeader>
-              <DialogTitle>Nonogram Puzzle</DialogTitle>
-              <DialogDescription>
-                Solve the nonogram puzzle to earn bonus points!
-              </DialogDescription>
-            </DialogHeader>
-            <NonogramGame onSolve={handleNonogramSolve} />
-          </DialogContent>
-        </Dialog>
-      )}
-      
-      {/* Jigsaw puzzle modal */}
-      {isJigsawOpen && (
-        <Dialog open={isJigsawOpen} onOpenChange={setIsJigsawOpen}>
-          <DialogContent className="sm:max-w-3xl">
-            <DialogHeader>
-              <DialogTitle>Jigsaw Puzzle</DialogTitle>
-              <DialogDescription>
-                Solve the jigsaw puzzle to earn bonus points!
-              </DialogDescription>
-            </DialogHeader>
-            <JigsawPuzzle onSolve={handleJigsawSolve} />
-          </DialogContent>
-        </Dialog>
-      )}
-    </div>
-  );
-};
-
-export default GameContainer;
