@@ -631,7 +631,7 @@ const GameContainer = () => {
       zIndex: 100,
       cursor: 'pointer',
       transition: 'all 1s ease-out',
-    } as const;
+    };
     
     // Determine offsets based on corner
     let x = bonusPosition.x;
@@ -673,7 +673,7 @@ const GameContainer = () => {
       color: '#FFD700',
       filter: 'drop-shadow(0 0 4px rgba(255, 215, 0, 0.5))',
       animation: 'pulse-subtle 2s infinite ease-in-out'
-    } as const;
+    };
   };
   
   // Get puzzle styles
@@ -689,7 +689,7 @@ const GameContainer = () => {
       color: '#4CAF50',
       filter: 'drop-shadow(0 0 4px rgba(76, 175, 80, 0.5))',
       animation: 'pulse-subtle 2s infinite ease-in-out'
-    } as const;
+    };
   };
   
   return (
@@ -796,7 +796,7 @@ const GameContainer = () => {
       
       {/* Event Recap section */}
       <div className="mb-4">
-        <EventRecap day={gameState.day} />
+        <EventRecap day={gameState.day} username="" />
       </div>
       
       {/* Main content */}
@@ -805,3 +805,4 @@ const GameContainer = () => {
         <div className="md:col-span-2 space-y-4">
           {/* Clicker panel */}
           <div className="rounded-md overflow-hidden shadow-md" style={{ backgroundImage: 'linear-gradient(#515763 0%, #2f3540 100%)' }}>
+            <div className="p-
