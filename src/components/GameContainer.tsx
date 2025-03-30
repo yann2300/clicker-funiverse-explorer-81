@@ -810,4 +810,4 @@ const GameContainer = () => {
         />
       </div>
       
-      {/* Main content with modified grid to give more space to upgrades
+      {/* Main content with modified grid to give more space to upgrades */}

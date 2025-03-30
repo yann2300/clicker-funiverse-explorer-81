@@ -2,9 +2,9 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 
-interface NonogramGameProps {
-  isOpen: boolean;
-  onClose: () => void;
+export interface NonogramGameProps {
+  isOpen?: boolean;
+  onClose?: () => void;
   onSolve: () => void;
 }
 
