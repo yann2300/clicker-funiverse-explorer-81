@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { toast } from "@/hooks/use-toast";
 import { GameState, Upgrade, Pet } from '@/types/gameState';
@@ -8,25 +7,24 @@ import { initialGames } from '@/lib/games';
 
 // Calculate XP needed for next level based on current level
 const calculateXpForLevel = (level: number): number => {
-  return Math.floor(100 * Math.pow(1.5, level - 1));
+  return Math.floor(10000 * Math.pow(1.07, level - 1));
 };
 
-// Calculate level based on total XP
-const calculateLevelFromXp = (totalXp: number): { level: number; xp: number; xpToNextLevel: number } => {
-  let level = 1;
-  let xpRequired = calculateXpForLevel(level);
+// Calculate level based on total points
+const calculateLevelFromXp = (totalPoints: number): { level: number; xp: number; xpToNextLevel: number } => {
+  // We'll base levels on total points, with level 100 at 1 billion points
+  const pointsPerLevel = 1000000000 / 100; // 10 million points per level
   
-  while (totalXp >= xpRequired) {
-    totalXp -= xpRequired;
-    level++;
-    xpRequired = calculateXpForLevel(level);
-  }
+  let level = Math.min(100, Math.floor(totalPoints / pointsPerLevel) + 1);
+  // Ensure level is at least 1
+  level = Math.max(1, level);
   
-  return {
-    level,
-    xp: totalXp,
-    xpToNextLevel: xpRequired
-  };
+  // Calculate progress within the current level
+  const levelStartPoints = (level - 1) * pointsPerLevel;
+  const xp = totalPoints - levelStartPoints;
+  const xpToNextLevel = level < 100 ? pointsPerLevel : 1; // At level 100, just show 1 to avoid division by zero
+  
+  return { level, xp, xpToNextLevel };
 };
 
 // Initial game state
@@ -43,7 +41,7 @@ const initialGameState: GameState = {
   pointsMultiplier: 1.0,
   level: 1,
   xp: 0,
-  xpToNextLevel: calculateXpForLevel(1),
+  xpToNextLevel: 10000000, // Updated for new leveling system
   games: initialGames
 };
 
@@ -114,64 +112,57 @@ export const useGameState = () => {
   
   // Add points (from clicking or passive generation)
   const addPoints = useCallback((amount: number) => {
-    setGameState(prev => {
-      // Add XP equal to points earned
-      const newXp = prev.xp + amount;
-      let newLevel = prev.level;
-      let xpToNextLevel = prev.xpToNextLevel;
+  setGameState(prev => {
+    const newTotalPoints = prev.totalPoints + amount;
+    
+    // Calculate level based on total points
+    const levelInfo = calculateLevelFromXp(newTotalPoints);
+    
+    // Check for level up
+    if (levelInfo.level > prev.level) {
+      // Show toast message for level up
+      toast({
+        title: `Level Up!`,
+        description: `You are now level ${levelInfo.level}!`
+      });
       
-      // Check for level up
-      if (newXp >= xpToNextLevel) {
-        const levelInfo = calculateLevelFromXp(prev.xp + amount);
-        newLevel = levelInfo.level;
-        xpToNextLevel = levelInfo.xpToNextLevel;
-        
-        // Show toast message for level up if there was one
-        if (newLevel > prev.level) {
+      // Check if any games got unlocked
+      const updatedGames = prev.games.map(game => {
+        if (!game.isUnlocked && 
+            game.unlockCondition.type === 'level' && 
+            typeof game.unlockCondition.value === 'number' &&
+            levelInfo.level >= game.unlockCondition.value) {
+          
           toast({
-            title: `Level Up!`,
-            description: `You are now level ${newLevel}!`
+            title: `New Game Unlocked!`,
+            description: `${game.name} is now available!`
           });
           
-          // Check if any games got unlocked
-          const updatedGames = prev.games.map(game => {
-            if (!game.isUnlocked && 
-                game.unlockCondition.type === 'level' && 
-                typeof game.unlockCondition.value === 'number' &&
-                newLevel >= game.unlockCondition.value) {
-              
-              toast({
-                title: `New Game Unlocked!`,
-                description: `${game.name} is now available!`
-              });
-              
-              return { ...game, isUnlocked: true };
-            }
-            return game;
-          });
-          
-          return {
-            ...prev,
-            points: prev.points + amount,
-            totalPoints: prev.totalPoints + amount,
-            level: newLevel,
-            xp: levelInfo.xp,
-            xpToNextLevel,
-            games: updatedGames
-          };
+          return { ...game, isUnlocked: true };
         }
-      }
+        return game;
+      });
       
       return {
         ...prev,
         points: prev.points + amount,
-        totalPoints: prev.totalPoints + amount,
-        xp: newXp,
-        level: newLevel,
-        xpToNextLevel
+        totalPoints: newTotalPoints,
+        level: levelInfo.level,
+        xp: levelInfo.xp,
+        xpToNextLevel: levelInfo.xpToNextLevel,
+        games: updatedGames
       };
-    });
-  }, []);
+    }
+    
+    return {
+      ...prev,
+      points: prev.points + amount,
+      totalPoints: newTotalPoints,
+      xp: levelInfo.xp,
+      xpToNextLevel: levelInfo.xpToNextLevel
+    };
+  });
+}, []);
   
   // Handle clicking the main button, with an optional multiplier for SURGE MODE
   const handleClick = useCallback((multiplier = 1) => {

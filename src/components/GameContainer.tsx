@@ -1,12 +1,13 @@
-
-import { useEffect, useState, useRef, useCallback } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import ClickerButton from './ClickerButton';
 import UpgradeShop from './UpgradeShop';
 import Stats from './Stats';
 import useGameState from '@/hooks/useGameState';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { RefreshCw, Trophy, Zap, Save, Volume2, VolumeX, Star, Puzzle } from 'lucide-react';
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { RefreshCw, Trophy, Zap, Save, Volume2, VolumeX, Star, Puzzle, Users } from 'lucide-react';
 import AchievementsSidebar from './AchievementsSidebar';
 import { achievements } from '@/lib/achievements';
 import { toast } from "@/hooks/use-toast";
@@ -18,6 +19,13 @@ import JigsawPuzzle from './JigsawPuzzle';
 import Games from './Games';
 import LevelProgress from './LevelProgress';
 import { formatNumber } from '@/lib/gameUtils';
+
+// Generate placeholder users for the steamgifts list
+const placeholderUsers = Array(30).fill(0).map((_, i) => ({
+  id: i,
+  name: `User${i+1}`,
+  avatarUrl: `https://source.boringavatars.com/beam/120/${i}?colors=264653,2a9d8f,e9c46a,f4a261,e76f51`
+}));
 
 // Konami code sequence
 const KONAMI_CODE = [
@@ -688,7 +696,9 @@ const GameContainer = () => {
       {/* Header with game stats */}
       <div className="bg-[#2f3540] rounded-md shadow-md flex items-center justify-between px-4 py-3 mb-4 text-[#acb1b9]">
         <div className="flex items-center gap-6">
-          <h1 className="text-2xl font-bold">{formatNumber(gameState.points)}P</h1>
+          <h1 className="text-2xl font-bold text-[#acb1b9] tracking-tight">
+            {formatNumber(gameState.points)}P
+          </h1>
           <div className="flex items-center gap-4">
             <div className="text-sm">+{formatNumber(gameState.pointsPerClick)}/click</div>
             <div className="text-sm">+{formatNumber(gameState.pointsPerSecond)}/sec</div>
@@ -700,7 +710,7 @@ const GameContainer = () => {
             <span className="text-sm font-medium">Level {gameState.level}</span>
           </div>
           
-          {/* Reset, Achievements and Sound toggle buttons */}
+          {/* Reset, Achievements, SteamGifts Users, and Sound toggle buttons */}
           <div className="flex gap-2">
             <Button
               variant="outline"
@@ -711,6 +721,46 @@ const GameContainer = () => {
             >
               {soundEnabled ? <Volume2 size={16} /> : <VolumeX size={16} />}
             </Button>
+            
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="rounded-full p-2 h-auto bg-[#434a5a] border-none text-[#acb1b9]"
+                  title="SteamGifts Users"
+                >
+                  <Users size={16} />
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-3xl">
+                <DialogHeader>
+                  <DialogTitle>SteamGifts Users</DialogTitle>
+                  <DialogDescription>
+                    Click on a user to visit their SteamGifts profile.
+                  </DialogDescription>
+                </DialogHeader>
+                
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4 py-4 max-h-[60vh] overflow-y-auto">
+                  {placeholderUsers.map(user => (
+                    <a 
+                      key={user.id}
+                      href={`https://www.steamgifts.com/user/${user.name}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex flex-col items-center p-2 hover:bg-gray-100 rounded-md transition-colors"
+                    >
+                      <Avatar className="w-16 h-16 mb-2">
+                        <AvatarImage src={user.avatarUrl} alt={user.name} />
+                        <AvatarFallback>{user.name.substring(0, 2)}</AvatarFallback>
+                      </Avatar>
+                      <span className="text-sm font-medium text-center">{user.name}</span>
+                    </a>
+                  ))}
+                </div>
+              </DialogContent>
+            </Dialog>
+            
             <Button
               variant="outline"
               size="sm"
@@ -719,6 +769,7 @@ const GameContainer = () => {
             >
               <Trophy size={16} />
             </Button>
+            
             <AlertDialog>
               <AlertDialogTrigger asChild>
                 <Button variant="outline" size="sm" className="rounded-full p-2 h-auto bg-[#434a5a] border-none text-[#acb1b9]">
@@ -744,136 +795,12 @@ const GameContainer = () => {
       
       {/* Main content */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {/* Left column - Clicker and Upgrades */}
+        {/* Left column - Clicker */}
         <div className="md:col-span-1 space-y-4">
           {/* Clicker panel */}
-          <div className="glass-panel rounded-md overflow-hidden">
-            <div className="bg-[#eef1f5] p-4 flex flex-col items-center justify-center">
-              <h2 className="text-xl font-semibold text-[#515763] mb-4">
+          <div className="rounded-md overflow-hidden shadow-md" style={{ backgroundImage: 'linear-gradient(#515763 0%, #2f3540 100%)' }}>
+            <div className="p-4 flex flex-col items-center justify-center">
+              <h2 className="text-xl font-semibold text-[#acb1b9] mb-4">
                 SG Clicker: a small grind to get them giveaways!
               </h2>
-              <ClickerButton 
-                onClick={handleGameClick}
-                pointsPerClick={gameState.pointsPerClick * (surgeMode ? 2 : 1)}
-                surgeMode={surgeMode}
-                playSound={soundEnabled}
-              />
-              
-              {/* Level progress bar */}
-              <LevelProgress 
-                level={gameState.level}
-                xp={gameState.xp}
-                xpToNextLevel={gameState.xpToNextLevel}
-              />
-            </div>
-            
-            {/* Stats shown below the clicker */}
-            <Stats 
-              points={gameState.points}
-              pointsPerClick={gameState.pointsPerClick * (surgeMode ? 2 : 1)}
-              pointsPerSecond={gameState.pointsPerSecond * (surgeMode ? 2 : 1)}
-              totalClicks={gameState.totalClicks}
-              totalPoints={gameState.totalPoints}
-              rawPointsPerClick={rawStats.pointsPerClick * (surgeMode ? 2 : 1)}
-              rawPointsPerSecond={rawStats.pointsPerSecond * (surgeMode ? 2 : 1)}
-              pointsMultiplier={gameState.pointsMultiplier}
-              surgeTimeBonus={gameState.surgeTimeBonus}
-              clickValueBoost={calculatePetBonuses(gameState.pets).clickValueBoost}
-              passiveBoost={calculatePetBonuses(gameState.pets).passiveBoost}
-              surgeModeChance={calculatePetBonuses(gameState.pets).surgeModeChance}
-              surgeMode={surgeMode}
-              level={gameState.level}
-            />
-          </div>
-          
-          {/* Upgrades panel moved to bottom left */}
-          <UpgradeShop 
-            gameState={gameState}
-            onPurchase={purchaseUpgrade}
-            onPetPurchase={purchasePet}
-            calculateUpgradeCost={calculateUpgradeCost}
-          />
-        </div>
-        
-        {/* Right column - Games */}
-        <div className="md:col-span-2">
-          <Games games={gameState.games} userLevel={gameState.level} />
-        </div>
-      </div>
-      
-      {/* Bonus elements */}
-      {showBonus && (
-        <div 
-          onClick={handleBonusClick}
-          style={getBonusStyles() as React.CSSProperties}
-        >
-          <img 
-            src="https://dejpknyizje2n.cloudfront.net/media/carstickers/versions/mole-pixel-sticker-ud740-811c-x450.png" 
-            alt="Bonus" 
-            className="w-full h-full object-contain"
-          />
-        </div>
-      )}
-      
-      {showStar && (
-        <div 
-          onClick={handleStarClick}
-          style={getStarStyles() as React.CSSProperties}
-          className="animate-pulse-subtle"
-        >
-          <Star size={40} fill="#FFD700" />
-        </div>
-      )}
-      
-      {showPuzzleIcon && (
-        <div 
-          onClick={handlePuzzleClick}
-          style={getPuzzleStyles() as React.CSSProperties}
-          className="animate-pulse-subtle"
-        >
-          <Puzzle size={40} fill="#4CAF50" />
-        </div>
-      )}
-      
-      {/* Nonogram game */}
-      <NonogramGame 
-        isOpen={isNonogramOpen}
-        onClose={() => setIsNonogramOpen(false)}
-        onSolve={handleNonogramSolve}
-      />
-      
-      {/* Jigsaw puzzle game */}
-      <JigsawPuzzle 
-        isOpen={isJigsawOpen}
-        onClose={() => setIsJigsawOpen(false)}
-        onSolve={handleJigsawSolve}
-        imageUrl="https://picsum.photos/300/300"
-      />
-      
-      {/* SURGE MODE timer */}
-      {surgeMode && (
-        <div className="fixed top-20 left-1/2 transform -translate-x-1/2 bg-red-600 text-white px-4 py-2 rounded-full flex items-center gap-2 z-50 animate-pulse">
-          <Zap size={16} className="text-yellow-300" />
-          <span className="font-bold">SURGE MODE: {surgeModeTimeLeft}s</span>
-        </div>
-      )}
-      
-      {/* Last save indicator */}
-      {lastSaved && (
-        <div className="fixed bottom-4 right-4 text-xs text-gray-500 flex items-center gap-1">
-          <Save size={12} />
-          <span>Last saved: {lastSaved.toLocaleTimeString()}</span>
-        </div>
-      )}
-      
-      {/* Achievements sidebar */}
-      <AchievementsSidebar
-        isOpen={isSidebarOpen}
-        onClose={() => setIsSidebarOpen(false)}
-        achievements={localAchievements}
-      />
-    </div>
-  );
-};
-
-export default GameContainer;
+              <ClickerButton

@@ -19,7 +19,7 @@ const Index = () => {
         </div>
       </main>
       
-      <footer className="bg-steamgifts-header text-[#acb1b9] py-4 text-center text-sm">
+      <footer style={{ backgroundImage: 'linear-gradient(#515763 0%, #2f3540 100%)' }} className="text-[#acb1b9] py-4 text-center text-sm">
         <p>SG Clicker &copy; {new Date().getFullYear()}</p>
       </footer>
     </div>
