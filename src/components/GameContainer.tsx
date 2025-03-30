@@ -19,10 +19,6 @@ import JigsawPuzzle from './JigsawPuzzle';
 import DayProgress from './LevelProgress';
 import EventRecap from './EventRecap';
 import { formatNumber } from '@/lib/gameUtils';
-import GameHeader from './GameHeader';
-import BonusMole from './BonusMole';
-import GameBonus from './GameBonus';
-import AchievementSystem from './AchievementSystem';
 
 // Generate placeholder users for the steamgifts list
 const placeholderUsers = Array(30).fill(0).map((_, i) => ({
@@ -698,6 +694,7 @@ const GameContainer = () => {
   
   return (
     <div className="container mx-auto px-4 py-3 relative overflow-hidden">
+      {/* Header with game stats */}
       <div style={{ backgroundImage: 'linear-gradient(#515763 0%, #2f3540 100%)' }} className="rounded-md shadow-md flex items-center justify-between px-4 py-3 mb-4 text-[#acb1b9]">
         <div className="flex items-center gap-6">
           <h1 className="text-2xl font-bold text-[#acb1b9] tracking-tight">
@@ -714,6 +711,7 @@ const GameContainer = () => {
             <span className="text-sm font-medium">Day {gameState.day}</span>
           </div>
           
+          {/* Reset, Achievements, SteamGifts Users, and Sound toggle buttons */}
           <div className="flex gap-2">
             <Button
               variant="outline"
@@ -796,9 +794,11 @@ const GameContainer = () => {
         </div>
       </div>
       
+      {/* Event Recap section with progress bar moved below it */}
       <div className="mb-4 space-y-2">
         <EventRecap day={gameState.day} />
         
+        {/* Day progress bar moved here */}
         <DayProgress 
           day={gameState.day} 
           dayProgress={gameState.dayProgress}
@@ -806,8 +806,6 @@ const GameContainer = () => {
         />
       </div>
       
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="flex flex-col gap-6">
-          <div className="bg-white rounded-lg shadow-lg p-6">
-            <ClickerButton 
-              onClick={handleGame
+      {/* Main content with modified grid to give more space to upgrades */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {/* Left column - Clicker (now taking

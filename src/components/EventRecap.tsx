@@ -39,7 +39,6 @@ const dayUsers: DayUser[] = [
   { day: 28, username: "eldonar", profileUrl: "https://www.steamgifts.com/user/eldonar" },
   { day: 29, username: "eeev", profileUrl: "https://www.steamgifts.com/user/eeev" },
   { day: 30, username: "JLleego", profileUrl: "https://www.steamgifts.com/user/JLleego" },
-  // Day 31 participants updated as requested
   { day: 31, username: "Gus09", profileUrl: "https://www.steamgifts.com/user/Gus09" },
   { day: 31, username: "JMM72", profileUrl: "https://www.steamgifts.com/user/JMM72" },
   { day: 31, username: "ColdOut", profileUrl: "https://www.steamgifts.com/user/ColdOut" },
