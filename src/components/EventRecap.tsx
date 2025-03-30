@@ -5,7 +5,6 @@ import { DayUser } from '@/types/gameState';
 
 interface EventRecapProps {
   day: number;
-  username: string;
 }
 
 // Define day users

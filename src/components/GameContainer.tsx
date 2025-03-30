@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import ClickerButton from './ClickerButton';
 import UpgradeShop from './UpgradeShop';
@@ -805,3 +806,93 @@ const GameContainer = () => {
         <div className="md:col-span-2 space-y-4">
           {/* Clicker panel */}
           <div className="rounded-md overflow-hidden shadow-md" style={{ backgroundImage: 'linear-gradient(#515763 0%, #2f3540 100%)' }}>
+            {/* Add ClickerButton and other components here */}
+            <ClickerButton 
+              onClick={handleGameClick} 
+              surgeMode={surgeMode} 
+              surgeModeTimeLeft={surgeModeTimeLeft} 
+            />
+          </div>
+          
+          {/* Stats panel */}
+          <Stats 
+            points={gameState.points} 
+            pointsPerClick={gameState.pointsPerClick} 
+            pointsPerSecond={gameState.pointsPerSecond} 
+            totalClicks={gameState.totalClicks} 
+            day={gameState.day}
+            rawStats={rawStats}
+          />
+          
+          {/* Day progress bar */}
+          <DayProgress 
+            day={gameState.day} 
+            dayProgress={gameState.dayProgress}
+            pointsToNextDay={gameState.pointsToNextDay}
+          />
+          
+          {/* Conditional rendering for mini-games */}
+          {isNonogramOpen && (
+            <NonogramGame 
+              onClose={() => setIsNonogramOpen(false)} 
+              onSolve={handleNonogramSolve} 
+            />
+          )}
+          
+          {isJigsawOpen && (
+            <JigsawPuzzle 
+              onClose={() => setIsJigsawOpen(false)} 
+              onSolve={handleJigsawSolve} 
+            />
+          )}
+        </div>
+        
+        {/* Right column - Upgrades */}
+        <div className="space-y-4">
+          <UpgradeShop 
+            gameState={gameState} 
+            onPurchase={purchaseUpgrade} 
+            onPetPurchase={purchasePet} 
+            calculateUpgradeCost={calculateUpgradeCost} 
+          />
+        </div>
+      </div>
+      
+      {/* Special bonus elements */}
+      {showBonus && (
+        <div 
+          style={getBonusStyles()} 
+          onClick={handleBonusClick}
+          className="bg-red-500 rounded-full animate-pulse"
+        ></div>
+      )}
+      
+      {showStar && (
+        <div 
+          style={getStarStyles()} 
+          onClick={handleStarClick}
+        >
+          <Star size={40} />
+        </div>
+      )}
+      
+      {showPuzzleIcon && (
+        <div 
+          style={getPuzzleStyles()} 
+          onClick={handlePuzzleClick}
+        >
+          <Puzzle size={40} />
+        </div>
+      )}
+      
+      {/* Achievements sidebar */}
+      <AchievementsSidebar 
+        isOpen={isSidebarOpen} 
+        onClose={() => setIsSidebarOpen(false)} 
+        achievements={localAchievements} 
+      />
+    </div>
+  );
+};
+
+export default GameContainer;
