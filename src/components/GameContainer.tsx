@@ -803,4 +803,5 @@ const GameContainer = () => {
               <h2 className="text-xl font-semibold text-[#acb1b9] mb-4">
                 SG Clicker: a small grind to get them giveaways!
               </h2>
-              <ClickerButton
+              <ClickerButton 
+                onClick={handle

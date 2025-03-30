@@ -14,12 +14,13 @@ interface NonogramGameProps {
 }
 
 const NonogramGame = ({ isOpen, onClose, onSolve }: NonogramGameProps) => {
-  // Create a simple 3x3 nonogram puzzle
+  // Create a simple 4x4 nonogram puzzle (easier)
   // 1 = filled, 0 = empty
   const [puzzle] = useState([
-    [1, 1, 0],
-    [0, 1, 0],
-    [0, 1, 0],
+    [1, 1, 0, 0],
+    [1, 0, 0, 0],
+    [1, 0, 0, 0],
+    [1, 1, 1, 0],
   ]);
   
   const [grid, setGrid] = useState<Cell[][]>([]);
@@ -29,8 +30,8 @@ const NonogramGame = ({ isOpen, onClose, onSolve }: NonogramGameProps) => {
   useEffect(() => {
     if (isOpen) {
       // Reset the game state when opened
-      const initialGrid = Array(3).fill(0).map(() => 
-        Array(3).fill(0).map(() => ({ filled: false, selected: false }))
+      const initialGrid = Array(4).fill(0).map(() => 
+        Array(4).fill(0).map(() => ({ filled: false, selected: false }))
       );
       setGrid(initialGrid);
       setSolved(false);

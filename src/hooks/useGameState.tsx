@@ -91,7 +91,7 @@ export const useGameState = () => {
     }
     return { ...initialGameState };
   };
-
+  
   const [gameState, setGameState] = useState<GameState>(loadState);
   
   // Save game state to localStorage
@@ -112,57 +112,57 @@ export const useGameState = () => {
   
   // Add points (from clicking or passive generation)
   const addPoints = useCallback((amount: number) => {
-  setGameState(prev => {
-    const newTotalPoints = prev.totalPoints + amount;
-    
-    // Calculate level based on total points
-    const levelInfo = calculateLevelFromXp(newTotalPoints);
-    
-    // Check for level up
-    if (levelInfo.level > prev.level) {
-      // Show toast message for level up
-      toast({
-        title: `Level Up!`,
-        description: `You are now level ${levelInfo.level}!`
-      });
+    setGameState(prev => {
+      const newTotalPoints = prev.totalPoints + amount;
       
-      // Check if any games got unlocked
-      const updatedGames = prev.games.map(game => {
-        if (!game.isUnlocked && 
-            game.unlockCondition.type === 'level' && 
-            typeof game.unlockCondition.value === 'number' &&
-            levelInfo.level >= game.unlockCondition.value) {
-          
-          toast({
-            title: `New Game Unlocked!`,
-            description: `${game.name} is now available!`
-          });
-          
-          return { ...game, isUnlocked: true };
-        }
-        return game;
-      });
+      // Calculate level based on total points
+      const levelInfo = calculateLevelFromXp(newTotalPoints);
+      
+      // Check for level up
+      if (levelInfo.level > prev.level) {
+        // Show toast message for level up
+        toast({
+          title: `Level Up!`,
+          description: `You are now level ${levelInfo.level}!`
+        });
+        
+        // Check if any games got unlocked
+        const updatedGames = prev.games.map(game => {
+          if (!game.isUnlocked && 
+              game.unlockCondition.type === 'level' && 
+              typeof game.unlockCondition.value === 'number' &&
+              levelInfo.level >= game.unlockCondition.value) {
+            
+            toast({
+              title: `New Game Unlocked!`,
+              description: `${game.name} is now available!`
+            });
+            
+            return { ...game, isUnlocked: true };
+          }
+          return game;
+        });
+        
+        return {
+          ...prev,
+          points: prev.points + amount,
+          totalPoints: newTotalPoints,
+          level: levelInfo.level,
+          xp: levelInfo.xp,
+          xpToNextLevel: levelInfo.xpToNextLevel,
+          games: updatedGames
+        };
+      }
       
       return {
         ...prev,
         points: prev.points + amount,
         totalPoints: newTotalPoints,
-        level: levelInfo.level,
         xp: levelInfo.xp,
-        xpToNextLevel: levelInfo.xpToNextLevel,
-        games: updatedGames
+        xpToNextLevel: levelInfo.xpToNextLevel
       };
-    }
-    
-    return {
-      ...prev,
-      points: prev.points + amount,
-      totalPoints: newTotalPoints,
-      xp: levelInfo.xp,
-      xpToNextLevel: levelInfo.xpToNextLevel
-    };
-  });
-}, []);
+    });
+  }, []);
   
   // Handle clicking the main button, with an optional multiplier for SURGE MODE
   const handleClick = useCallback((multiplier = 1) => {
