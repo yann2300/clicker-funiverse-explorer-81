@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import ClickerButton from './ClickerButton';
 import UpgradeShop from './UpgradeShop';
@@ -811,3 +812,105 @@ const GameContainer = () => {
       </div>
       
       {/* Main content with modified grid to give more space to upgrades */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Left column: Clicker button and stats */}
+        <div className="flex flex-col gap-6">
+          <div className="bg-white rounded-lg shadow-lg p-6">
+            <ClickerButton onClick={handleGameClick} surgeMode={surgeMode} />
+            
+            <div className="mt-6">
+              <h3 className="text-lg font-bold mb-2">Stats</h3>
+              <Stats 
+                pointsPerClick={gameState.pointsPerClick}
+                pointsPerSecond={gameState.pointsPerSecond}
+                clickBoost={gameState.clickValueBoost}
+                passiveBoost={gameState.passiveBoost}
+                surgeModeChance={gameState.surgeModeChance}
+                surgeMode={surgeMode}
+                surgeModeTimeLeft={surgeModeTimeLeft}
+              />
+            </div>
+          </div>
+          
+          {/* Stats breakdown */}
+          <div className="bg-white rounded-lg shadow-lg p-6">
+            <h3 className="text-lg font-bold mb-4">Stats Breakdown</h3>
+            <StatsBreakdown
+              rawStats={rawStats}
+              clickBoost={gameState.clickValueBoost}
+              passiveBoost={gameState.passiveBoost}
+              pointsMultiplier={gameState.pointsMultiplier}
+            />
+          </div>
+        </div>
+        
+        {/* Center and right columns: Upgrades */}
+        <div className="lg:col-span-2">
+          <UpgradeShop
+            gameState={gameState}
+            purchaseUpgrade={purchaseUpgrade}
+            purchasePet={purchasePet}
+            calculateUpgradeCost={calculateUpgradeCost}
+          />
+        </div>
+      </div>
+      
+      {/* Achievement sidebar */}
+      <AchievementsSidebar
+        achievements={localAchievements}
+        isOpen={isSidebarOpen}
+        onClose={() => setIsSidebarOpen(false)}
+      />
+      
+      {/* Floating bonus mole */}
+      {showBonus && (
+        <BonusMole
+          position={bonusPosition}
+          onClick={handleBonusClick}
+        />
+      )}
+      
+      {/* Floating star for nonogram */}
+      {showStar && (
+        <div style={getStarStyles()} onClick={handleStarClick}>
+          <Star className="w-full h-full" />
+        </div>
+      )}
+      
+      {/* Floating puzzle icon for jigsaw */}
+      {showPuzzleIcon && (
+        <div style={getPuzzleStyles()} onClick={handlePuzzleClick}>
+          <Puzzle className="w-full h-full" />
+        </div>
+      )}
+      
+      {/* Nonogram game modal */}
+      <Dialog open={isNonogramOpen} onOpenChange={setIsNonogramOpen}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Nonogram Puzzle</DialogTitle>
+            <DialogDescription>
+              Solve the nonogram to earn bonus points!
+            </DialogDescription>
+          </DialogHeader>
+          <NonogramGame onSolve={handleNonogramSolve} />
+        </DialogContent>
+      </Dialog>
+      
+      {/* Jigsaw puzzle modal */}
+      <Dialog open={isJigsawOpen} onOpenChange={setIsJigsawOpen}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Jigsaw Puzzle</DialogTitle>
+            <DialogDescription>
+              Solve the jigsaw puzzle to earn bonus points!
+            </DialogDescription>
+          </DialogHeader>
+          <JigsawPuzzle onSolve={handleJigsawSolve} />
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+};
+
+export default GameContainer;
