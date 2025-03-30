@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Stage, Layer, Rect, Line } from 'react-konva';
 
@@ -12,7 +13,7 @@ const JigsawPuzzle = ({ onSolve, isOpen, onClose }: JigsawPuzzleProps) => {
   const [pieces, setPieces] = useState([]);
   const [solved, setSolved] = useState(false);
   const [width, setWidth] = useState(window.innerWidth / 2);
-  const [height, setHeight] = window.innerHeight / 2;
+  const [height, setHeight] = useState(window.innerHeight / 2);
   const gridSize = 5;
   const pieceSize = Math.min(width, height) / gridSize;
   const puzzleImage = '/images/jigsaw-image.jpg'; // Path to your image
@@ -61,7 +62,7 @@ const JigsawPuzzle = ({ onSolve, isOpen, onClose }: JigsawPuzzleProps) => {
     return () => {
       window.removeEventListener('resize', handleResize);
     };
-  }, [isOpen, width, height]);
+  }, [isOpen, width, height, pieceSize]);
 
   const handleDragStart = (e) => {
     const id = e.target.id();

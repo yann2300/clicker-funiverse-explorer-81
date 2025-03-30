@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { Button } from "@/components/ui/button";
 
@@ -7,7 +8,7 @@ export interface NonogramGameProps {
   onClose: () => void;
 }
 
-const NonogramGame = ({ onSolve }: NonogramGameProps) => {
+const NonogramGame = ({ onSolve, isOpen, onClose }: NonogramGameProps) => {
   const [grid, setGrid] = useState<boolean[][]>([]);
   const [rows, setRows] = useState<number[][]>([]);
   const [cols, setCols] = useState<number[][]>([]);
@@ -74,8 +75,10 @@ const NonogramGame = ({ onSolve }: NonogramGameProps) => {
   }, []);
 
   useEffect(() => {
-    generatePuzzle(size);
-  }, [generatePuzzle, size]);
+    if (isOpen) {
+      generatePuzzle(size);
+    }
+  }, [generatePuzzle, size, isOpen]);
 
   const toggleCell = (row: number, col: number) => {
     if (solved) return;
@@ -150,6 +153,7 @@ const NonogramGame = ({ onSolve }: NonogramGameProps) => {
     if (isCorrect) {
       setSolved(true);
       onSolve();
+      onClose();
     } else {
       alert("Incorrect solution. Try again!");
     }
