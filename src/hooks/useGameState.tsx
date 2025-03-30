@@ -78,6 +78,9 @@ const initialGameState: GameState = {
   day: 1,
   dayProgress: 0,
   pointsToNextDay: DAY_THRESHOLDS[1], // Points needed to go from day 1 to day 2
+  clickValueBoost: 0,
+  passiveBoost: 0,
+  surgeModeChance: 0,
 };
 
 // Hook to manage game state
@@ -104,6 +107,15 @@ export const useGameState = () => {
         }
         if (parsed.pointsMultiplier === undefined) {
           parsed.pointsMultiplier = 1.0;
+        }
+        if (parsed.clickValueBoost === undefined) {
+          parsed.clickValueBoost = 0;
+        }
+        if (parsed.passiveBoost === undefined) {
+          parsed.passiveBoost = 0;
+        }
+        if (parsed.surgeModeChance === undefined) {
+          parsed.surgeModeChance = 0;
         }
         
         // Convert old level system to day system if needed
@@ -281,6 +293,9 @@ export const useGameState = () => {
         pointsPerSecond: newPointsPerSecond,
         pointsMultiplier: petBonuses.pointsMultiplier,
         surgeTimeBonus: petBonuses.surgeTimeBonus,
+        clickValueBoost: petBonuses.clickValueBoost,
+        passiveBoost: petBonuses.passiveBoost,
+        surgeModeChance: petBonuses.surgeModeChance,
         upgrades: newUpgrades,
         pets: updatedPets,
         day: dayInfo.day,
@@ -335,6 +350,9 @@ export const useGameState = () => {
         pointsPerClick: newPointsPerClick,
         pointsMultiplier: petBonuses.pointsMultiplier,
         surgeTimeBonus: petBonuses.surgeTimeBonus,
+        clickValueBoost: petBonuses.clickValueBoost,
+        passiveBoost: petBonuses.passiveBoost,
+        surgeModeChance: petBonuses.surgeModeChance,
         day: dayInfo.day,
         dayProgress: dayInfo.dayProgress,
         pointsToNextDay: dayInfo.pointsToNextDay,
@@ -388,7 +406,9 @@ export const useGameState = () => {
     return () => clearInterval(saveTimer);
   }, [saveGameState]);
   
-  const updateGameUnlocks = useCallback(() => {}, []);
+  const updateGameUnlocks = useCallback((unlockedAchievements: Set<string>) => {
+    // For now, this function does nothing but will be implemented later
+  }, []);
   
   return {
     gameState,

@@ -1,11 +1,6 @@
 
-import { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-
-type Cell = {
-  filled: boolean;
-  selected: boolean;
-};
+import React, { useState, useEffect } from 'react';
+import { Button } from "@/components/ui/button";
 
 interface NonogramGameProps {
   isOpen: boolean;
@@ -13,164 +8,193 @@ interface NonogramGameProps {
   onSolve: () => void;
 }
 
-const NonogramGame = ({ isOpen, onClose, onSolve }: NonogramGameProps) => {
-  // Create a simple 4x4 nonogram puzzle (easier)
-  // 1 = filled, 0 = empty
-  const [puzzle] = useState([
-    [1, 1, 0, 0],
-    [1, 0, 0, 0],
-    [1, 0, 0, 0],
-    [1, 1, 1, 0],
-  ]);
-  
-  const [grid, setGrid] = useState<Cell[][]>([]);
+const NonogramGame: React.FC<NonogramGameProps> = ({ onSolve }) => {
+  // Use dummy isOpen and onClose props that aren't used in the implementation
+  // but are needed for the type definition
+  const [grid, setGrid] = useState<number[][]>([]);
+  const [selectedCell, setSelectedCell] = useState<{row: number, col: number} | null>(null);
   const [solved, setSolved] = useState(false);
+  const size = 5; // 5x5 grid for simplicity
   
-  // Initialize the grid
+  // Initialize the grid with a simple pattern
   useEffect(() => {
-    if (isOpen) {
-      // Reset the game state when opened
-      const initialGrid = Array(4).fill(0).map(() => 
-        Array(4).fill(0).map(() => ({ filled: false, selected: false }))
-      );
-      setGrid(initialGrid);
-      setSolved(false);
-    }
-  }, [isOpen]);
+    const pattern = [
+      [1, 1, 0, 1, 1],
+      [1, 0, 0, 0, 1],
+      [0, 0, 1, 0, 0],
+      [1, 0, 0, 0, 1],
+      [1, 1, 0, 1, 1]
+    ];
+    
+    // Start with an empty player grid
+    const newGrid = Array(size).fill(0).map(() => Array(size).fill(0));
+    setGrid(newGrid);
+  }, []);
   
-  // Calculate row and column hints
-  const rowHints = puzzle.map(row => {
-    const hints = [];
-    let count = 0;
-    
-    for (let i = 0; i < row.length; i++) {
-      if (row[i] === 1) {
-        count++;
-      } else if (count > 0) {
-        hints.push(count);
-        count = 0;
-      }
-    }
-    
-    if (count > 0) {
-      hints.push(count);
-    }
-    
-    return hints.length ? hints : [0];
-  });
-  
-  const colHints = Array(puzzle[0].length).fill(0).map((_, colIndex) => {
-    const hints = [];
-    let count = 0;
-    
-    for (let rowIndex = 0; rowIndex < puzzle.length; rowIndex++) {
-      if (puzzle[rowIndex][colIndex] === 1) {
-        count++;
-      } else if (count > 0) {
-        hints.push(count);
-        count = 0;
-      }
-    }
-    
-    if (count > 0) {
-      hints.push(count);
-    }
-    
-    return hints.length ? hints : [0];
-  });
-  
-  // Toggle cell selection
-  const toggleCell = (rowIndex: number, colIndex: number) => {
+  // Toggle a cell
+  const toggleCell = (row: number, col: number) => {
     if (solved) return;
     
-    const newGrid = [...grid];
-    newGrid[rowIndex][colIndex].selected = !newGrid[rowIndex][colIndex].selected;
-    setGrid(newGrid);
-    
-    // Check if puzzle is solved
-    checkSolution(newGrid);
+    setGrid(prev => {
+      const newGrid = [...prev];
+      newGrid[row] = [...prev[row]];
+      newGrid[row][col] = newGrid[row][col] === 0 ? 1 : 0;
+      
+      // Check if solved
+      setTimeout(checkSolution, 100);
+      
+      return newGrid;
+    });
   };
   
-  // Check if the current grid matches the solution
-  const checkSolution = (currentGrid: Cell[][]) => {
-    for (let rowIndex = 0; rowIndex < puzzle.length; rowIndex++) {
-      for (let colIndex = 0; colIndex < puzzle[0].length; colIndex++) {
-        // If solution is 1, cell must be selected
-        // If solution is 0, cell must not be selected
-        if ((puzzle[rowIndex][colIndex] === 1 && !currentGrid[rowIndex][colIndex].selected) ||
-            (puzzle[rowIndex][colIndex] === 0 && currentGrid[rowIndex][colIndex].selected)) {
-          return;
-        }
+  // Check if the puzzle is solved
+  const checkSolution = () => {
+    // Hard-coded solution for this simple nonogram
+    const solution = [
+      [1, 1, 0, 1, 1],
+      [1, 0, 0, 0, 1],
+      [0, 0, 1, 0, 0],
+      [1, 0, 0, 0, 1],
+      [1, 1, 0, 1, 1]
+    ];
+    
+    const isSolved = grid.every((row, rowIndex) => 
+      row.every((cell, colIndex) => cell === solution[rowIndex][colIndex])
+    );
+    
+    if (isSolved) {
+      setSolved(true);
+      setTimeout(() => {
+        onSolve();
+      }, 1000);
+    }
+  };
+  
+  // Generate row hints
+  const getRowHints = (row: number) => {
+    const solution = [
+      [1, 1, 0, 1, 1],
+      [1, 0, 0, 0, 1],
+      [0, 0, 1, 0, 0],
+      [1, 0, 0, 0, 1],
+      [1, 1, 0, 1, 1]
+    ];
+    
+    const rowData = solution[row];
+    const hints = [];
+    let count = 0;
+    
+    for (let i = 0; i < rowData.length; i++) {
+      if (rowData[i] === 1) {
+        count++;
+      } else if (count > 0) {
+        hints.push(count);
+        count = 0;
       }
     }
     
-    // If we get here, the puzzle is solved
-    setSolved(true);
-    setTimeout(() => {
-      onSolve();
-      onClose();
-    }, 1500);
+    if (count > 0) {
+      hints.push(count);
+    }
+    
+    return hints.length > 0 ? hints.join(' ') : '0';
   };
   
-  if (!grid.length) return null;
+  // Generate column hints
+  const getColHints = (col: number) => {
+    const solution = [
+      [1, 1, 0, 1, 1],
+      [1, 0, 0, 0, 1],
+      [0, 0, 1, 0, 0],
+      [1, 0, 0, 0, 1],
+      [1, 1, 0, 1, 1]
+    ];
+    
+    const hints = [];
+    let count = 0;
+    
+    for (let i = 0; i < size; i++) {
+      if (solution[i][col] === 1) {
+        count++;
+      } else if (count > 0) {
+        hints.push(count);
+        count = 0;
+      }
+    }
+    
+    if (count > 0) {
+      hints.push(count);
+    }
+    
+    return hints.length > 0 ? hints.join(' ') : '0';
+  };
   
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>{solved ? "🎉 Puzzle Solved!" : "Solve the Nonogram"}</DialogTitle>
-        </DialogHeader>
-        
-        <div className="p-4">
-          <div className="flex justify-center mb-4">
-            <p className="text-sm text-gray-500">Fill in the correct cells to solve the puzzle</p>
-          </div>
+    <div className="p-4">
+      <div className="mb-4 text-center">
+        <p className="text-sm text-gray-500 mb-2">
+          Fill in the grid according to the clues to reveal the pattern.
+        </p>
+        {solved && (
+          <p className="text-green-600 font-bold animate-pulse">
+            Puzzle solved! +10,000 points
+          </p>
+        )}
+      </div>
+      
+      <div className="flex justify-center">
+        <div className="grid grid-rows-6 grid-cols-6 gap-1">
+          {/* Empty top-left cell */}
+          <div className="w-8 h-8"></div>
           
-          <div className="flex">
-            {/* Empty corner cell */}
-            <div className="w-8 h-8"></div>
-            
-            {/* Column hints */}
-            <div className="flex">
-              {colHints.map((hints, colIndex) => (
-                <div key={`col-${colIndex}`} className="w-8 h-8 flex items-end justify-center pb-1">
-                  <div className="text-xs font-bold text-steamgifts-text">{hints.join(',')}</div>
-                </div>
-              ))}
-            </div>
-          </div>
-          
-          {/* Row hints + Grid */}
-          {grid.map((row, rowIndex) => (
-            <div key={`row-${rowIndex}`} className="flex">
-              {/* Row hint */}
-              <div className="w-8 h-8 flex items-center justify-end pr-1">
-                <div className="text-xs font-bold text-steamgifts-text">{rowHints[rowIndex].join(',')}</div>
-              </div>
-              
-              {/* Cells */}
-              <div className="flex">
-                {row.map((cell, colIndex) => (
-                  <div 
-                    key={`cell-${rowIndex}-${colIndex}`}
-                    className={`w-8 h-8 border border-gray-300 flex items-center justify-center cursor-pointer ${
-                      cell.selected ? 'bg-steamgifts-primary' : 'bg-white hover:bg-gray-100'
-                    }`}
-                    onClick={() => toggleCell(rowIndex, colIndex)}
-                  />
-                ))}
-              </div>
+          {/* Column hints */}
+          {Array(size).fill(0).map((_, col) => (
+            <div key={`col-${col}`} className="w-8 h-8 flex items-center justify-center bg-gray-100 text-xs font-mono">
+              {getColHints(col)}
             </div>
           ))}
           
-          {solved && (
-            <div className="mt-4 text-center text-green-600 font-bold animate-pulse">
-              You've solved it! +10,000 points
-            </div>
-          )}
+          {/* Row hints and grid */}
+          {Array(size).fill(0).map((_, row) => (
+            <React.Fragment key={`row-${row}`}>
+              {/* Row hint */}
+              <div className="w-8 h-8 flex items-center justify-center bg-gray-100 text-xs font-mono">
+                {getRowHints(row)}
+              </div>
+              
+              {/* Grid cells */}
+              {Array(size).fill(0).map((_, col) => (
+                <div 
+                  key={`${row}-${col}`}
+                  onClick={() => toggleCell(row, col)}
+                  className={`w-8 h-8 border cursor-pointer ${
+                    grid[row]?.[col] === 1 ? 'bg-black' : 'bg-white'
+                  } ${
+                    selectedCell?.row === row && selectedCell?.col === col 
+                      ? 'ring-2 ring-blue-500' 
+                      : ''
+                  }`}
+                ></div>
+              ))}
+            </React.Fragment>
+          ))}
         </div>
-      </DialogContent>
-    </Dialog>
+      </div>
+      
+      <div className="mt-4 flex justify-center">
+        <Button 
+          onClick={() => {
+            setGrid(Array(size).fill(0).map(() => Array(size).fill(0)));
+            setSolved(false);
+          }}
+          disabled={solved}
+          variant="outline"
+          size="sm"
+        >
+          Reset
+        </Button>
+      </div>
+    </div>
   );
 };
 

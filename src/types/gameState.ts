@@ -32,6 +32,20 @@ export interface DayUser {
   profileUrl: string;
 }
 
+export interface Game {
+  id: string;
+  name: string;
+  description: string;
+  imageUrl: string;
+  pointsCost: number;
+  unlockCondition: {
+    type: 'level' | 'achievement';
+    value: number | string;
+  };
+  link: string;
+  isUnlocked: boolean;
+}
+
 export interface GameState {
   points: number;
   pointsPerClick: number;
@@ -48,4 +62,8 @@ export interface GameState {
   day: number;
   dayProgress: number;
   pointsToNextDay: number;
+  // Pet bonus properties
+  clickValueBoost: number;
+  passiveBoost: number;
+  surgeModeChance: number;
 }
