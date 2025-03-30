@@ -40,32 +40,73 @@ const dayUsers: DayUser[] = [
   { day: 29, username: "eeev", profileUrl: "https://www.steamgifts.com/user/eeev" },
   { day: 30, username: "JLleego", profileUrl: "https://www.steamgifts.com/user/JLleego" },
   { day: 31, username: "Gus09", profileUrl: "https://www.steamgifts.com/user/Gus09" },
+  { day: 31, username: "JMM72", profileUrl: "https://www.steamgifts.com/user/JMM72" },
+  { day: 31, username: "ColdOut", profileUrl: "https://www.steamgifts.com/user/ColdOut" },
+  { day: 31, username: "Volcanic", profileUrl: "https://www.steamgifts.com/user/Volcanic" },
+  { day: 31, username: "Cole420", profileUrl: "https://www.steamgifts.com/user/Cole420" },
+  { day: 31, username: "PoeticKatana", profileUrl: "https://www.steamgifts.com/user/PoeticKatana" },
+  { day: 31, username: "AceBerg42", profileUrl: "https://www.steamgifts.com/user/AceBerg42" },
+  { day: 31, username: "herbesdeprovence", profileUrl: "https://www.steamgifts.com/user/herbesdeprovence" },
+  { day: 31, username: "s4k1s", profileUrl: "https://www.steamgifts.com/user/s4k1s" },
+  { day: 31, username: "forseeker", profileUrl: "https://www.steamgifts.com/user/forseeker" },
+  { day: 31, username: "aez76", profileUrl: "https://www.steamgifts.com/user/aez76" },
+  { day: 31, username: "Ignition365", profileUrl: "https://www.steamgifts.com/user/Ignition365" },
 ];
 
 const EventRecap: React.FC<EventRecapProps> = ({ day }) => {
-  // Find the user for the current day
-  const currentDayUser = dayUsers.find(user => user.day === day) || dayUsers[0];
+  // Find the users for the current day
+  const currentDayUsers = dayUsers.filter(user => user.day === day);
+  
+  // If no users are found for the current day, use the first user as a fallback
+  const usersToDisplay = currentDayUsers.length > 0 ? currentDayUsers : [dayUsers[0]];
   
   return (
     <div className="bg-white/80 backdrop-blur-sm rounded-lg shadow-md p-4">
       <h2 className="text-lg font-semibold mb-2">Recap of the MEGAEVENT</h2>
-      <div className="flex items-center gap-3">
-        <Avatar className="h-12 w-12">
-          <AvatarImage src={`https://source.boringavatars.com/beam/120/${currentDayUser.username}?colors=264653,2a9d8f,e9c46a,f4a261,e76f51`} alt={currentDayUser.username} />
-          <AvatarFallback>{currentDayUser.username.substring(0, 2)}</AvatarFallback>
-        </Avatar>
+      
+      {day === 31 ? (
+        // Special display for day 31 with multiple participants
         <div>
-          <p className="text-sm">Day {day} Participant:</p>
-          <a 
-            href={currentDayUser.profileUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="font-medium text-blue-600 hover:text-blue-800 hover:underline"
-          >
-            {currentDayUser.username}
-          </a>
+          <p className="text-sm mb-2">Day {day} Participants:</p>
+          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2">
+            {usersToDisplay.map((user, index) => (
+              <div key={index} className="flex flex-col items-center">
+                <Avatar className="h-10 w-10 mb-1">
+                  <AvatarImage src={`https://source.boringavatars.com/beam/120/${user.username}?colors=264653,2a9d8f,e9c46a,f4a261,e76f51`} alt={user.username} />
+                  <AvatarFallback>{user.username.substring(0, 2)}</AvatarFallback>
+                </Avatar>
+                <a 
+                  href={user.profileUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs font-medium text-blue-600 hover:text-blue-800 hover:underline text-center truncate w-full"
+                >
+                  {user.username}
+                </a>
+              </div>
+            ))}
+          </div>
         </div>
-      </div>
+      ) : (
+        // Normal display for other days with single participant
+        <div className="flex items-center gap-3">
+          <Avatar className="h-12 w-12">
+            <AvatarImage src={`https://source.boringavatars.com/beam/120/${usersToDisplay[0].username}?colors=264653,2a9d8f,e9c46a,f4a261,e76f51`} alt={usersToDisplay[0].username} />
+            <AvatarFallback>{usersToDisplay[0].username.substring(0, 2)}</AvatarFallback>
+          </Avatar>
+          <div>
+            <p className="text-sm">Day {day} Participant:</p>
+            <a 
+              href={usersToDisplay[0].profileUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-medium text-blue-600 hover:text-blue-800 hover:underline"
+            >
+              {usersToDisplay[0].username}
+            </a>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
