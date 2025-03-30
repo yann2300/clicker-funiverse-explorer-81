@@ -794,18 +794,14 @@ const GameContainer = () => {
         </div>
       </div>
       
-      {/* Event Recap section with progress bar moved below it */}
-      <div className="mb-4 space-y-2">
+      {/* Event Recap section */}
+      <div className="mb-4">
         <EventRecap day={gameState.day} />
-        
-        {/* Day progress bar moved here */}
-        <DayProgress 
-          day={gameState.day} 
-          dayProgress={gameState.dayProgress}
-          pointsToNextDay={gameState.pointsToNextDay}
-        />
       </div>
       
-      {/* Main content with modified grid to give more space to upgrades */}
+      {/* Main content */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {/* Left column - Clicker (now taking
+        {/* Left column - Clicker */}
+        <div className="md:col-span-2 space-y-4">
+          {/* Clicker panel */}
+          <div className="rounded-md overflow-hidden shadow-md" style={{ backgroundImage: 'linear-gradient(#515763 0%, #2f3540 100%)' }}>

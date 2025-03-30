@@ -4,19 +4,12 @@ import { formatNumber } from '@/lib/gameUtils';
 
 interface ClickerButtonProps {
   onClick: () => void;
-  pointsPerClick?: number;
-  surgeMode?: boolean;
-  surgeModeTimeLeft?: number;
+  pointsPerClick: number;
+  surgeMode: boolean;
   playSound?: boolean;
 }
 
-const ClickerButton = ({ 
-  onClick, 
-  pointsPerClick = 1, 
-  surgeMode = false, 
-  surgeModeTimeLeft = 0, 
-  playSound = true 
-}: ClickerButtonProps) => {
+const ClickerButton = ({ onClick, pointsPerClick, surgeMode, playSound = true }: ClickerButtonProps) => {
   const [isPressed, setIsPressed] = useState(false);
   const [floatingTexts, setFloatingTexts] = useState<{ id: number; x: number; y: number; value: number }[]>([]);
   const buttonRef = useRef<HTMLButtonElement>(null);
@@ -55,7 +48,7 @@ const ClickerButton = ({
   };
   
   return (
-    <div className="relative flex items-center justify-center my-4 w-full max-w-[240px] mx-auto">
+    <div className="relative flex items-center justify-center my-4 w-full max-w-[240px]">
       <button
         ref={buttonRef}
         className={`relative w-full aspect-square rounded-md button-click-effect
@@ -85,7 +78,7 @@ const ClickerButton = ({
             className="float-text text-white font-medium text-lg"
             style={{ left: `${text.x}px`, top: `${text.y}px` }}
           >
-            +{text.value ? formatNumber(text.value) : '0'}
+            +{formatNumber(text.value)}
           </div>
         ))}
       </button>
