@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import ClickerButton from './ClickerButton';
 import UpgradeShop from './UpgradeShop';
@@ -804,4 +805,112 @@ const GameContainer = () => {
                 SG Clicker: a small grind to get them giveaways!
               </h2>
               <ClickerButton 
-                onClick={handle
+                onClick={handleGameClick}
+                pointsPerClick={gameState.pointsPerClick * (surgeMode ? 2 : 1)}
+                surgeMode={surgeMode}
+                playSound={soundEnabled}
+              />
+              
+              {/* Level progress bar */}
+              <LevelProgress 
+                level={gameState.level}
+                xp={gameState.xp}
+                xpToNextLevel={gameState.xpToNextLevel}
+              />
+            </div>
+            
+            {/* Stats shown below the clicker */}
+            <Stats 
+              points={gameState.points}
+              pointsPerClick={gameState.pointsPerClick * (surgeMode ? 2 : 1)}
+              pointsPerSecond={gameState.pointsPerSecond * (surgeMode ? 2 : 1)}
+              totalClicks={gameState.totalClicks}
+              totalPoints={gameState.totalPoints}
+              rawPointsPerClick={rawStats.pointsPerClick * (surgeMode ? 2 : 1)}
+              rawPointsPerSecond={rawStats.pointsPerSecond * (surgeMode ? 2 : 1)}
+              pointsMultiplier={gameState.pointsMultiplier}
+              surgeTimeBonus={gameState.surgeTimeBonus}
+              clickValueBoost={calculatePetBonuses(gameState.pets).clickValueBoost}
+              passiveBoost={calculatePetBonuses(gameState.pets).passiveBoost}
+              surgeModeChance={calculatePetBonuses(gameState.pets).surgeModeChance}
+              surgeMode={surgeMode}
+              level={gameState.level}
+            />
+          </div>
+        </div>
+        
+        {/* Right column - Games */}
+        <div className="md:col-span-2">
+          <Games games={gameState.games} userLevel={gameState.level} />
+        </div>
+      </div>
+      
+      {/* Bottom row - Upgrades panel to span the full width */}
+      <div className="mt-4">
+        <UpgradeShop 
+          gameState={gameState}
+          onPurchase={purchaseUpgrade}
+          onPetPurchase={purchasePet}
+          calculateUpgradeCost={calculateUpgradeCost}
+        />
+      </div>
+      
+      {/* Bonus elements */}
+      {showBonus && (
+        <div 
+          onClick={handleBonusClick}
+          style={getBonusStyles() as React.CSSProperties}
+        >
+          <img 
+            src="https://dejpknyizje2n.cloudfront.net/media/carstickers/versions/mole-pixel-sticker-ud740-811c-x450.png" 
+            alt="Bonus" 
+            className="w-full h-full object-contain"
+          />
+        </div>
+      )}
+      
+      {/* Star bonus for nonogram game */}
+      {showStar && (
+        <div 
+          onClick={handleStarClick}
+          style={getStarStyles() as React.CSSProperties}
+        >
+          <Star size={40} />
+        </div>
+      )}
+      
+      {/* Puzzle bonus for jigsaw game */}
+      {showPuzzleIcon && (
+        <div 
+          onClick={handlePuzzleClick}
+          style={getPuzzleStyles() as React.CSSProperties}
+        >
+          <Puzzle size={40} />
+        </div>
+      )}
+      
+      {/* Nonogram game popup */}
+      <NonogramGame 
+        isOpen={isNonogramOpen}
+        onClose={() => setIsNonogramOpen(false)}
+        onSolve={handleNonogramSolve}
+      />
+      
+      {/* Jigsaw puzzle popup */}
+      <JigsawPuzzle 
+        isOpen={isJigsawOpen}
+        onClose={() => setIsJigsawOpen(false)}
+        onSolve={handleJigsawSolve}
+      />
+      
+      {/* Achievements sidebar */}
+      <AchievementsSidebar 
+        achievements={localAchievements}
+        isOpen={isSidebarOpen} 
+        onClose={() => setIsSidebarOpen(false)}
+      />
+    </div>
+  );
+};
+
+export default GameContainer;
