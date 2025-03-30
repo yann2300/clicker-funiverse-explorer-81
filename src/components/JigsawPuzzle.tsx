@@ -1,6 +1,6 @@
 
-import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Stage, Layer, Rect, Line } from 'react-konva';
+import React, { useState, useEffect, useRef } from 'react';
+import { Stage, Layer, Rect } from 'react-konva';
 
 export interface JigsawPuzzleProps {
   onSolve: () => void;
@@ -10,7 +10,16 @@ export interface JigsawPuzzleProps {
 
 const JigsawPuzzle = ({ onSolve, isOpen, onClose }: JigsawPuzzleProps) => {
   const stageRef = useRef(null);
-  const [pieces, setPieces] = useState([]);
+  const [pieces, setPieces] = useState<Array<{
+    id: string;
+    x: number;
+    y: number;
+    correctX: number;
+    correctY: number;
+    offsetX: number;
+    offsetY: number;
+    isDragging: boolean;
+  }>>([]);
   const [solved, setSolved] = useState(false);
   const [width, setWidth] = useState(window.innerWidth / 2);
   const [height, setHeight] = useState(window.innerHeight / 2);
@@ -64,7 +73,7 @@ const JigsawPuzzle = ({ onSolve, isOpen, onClose }: JigsawPuzzleProps) => {
     };
   }, [isOpen, width, height, pieceSize]);
 
-  const handleDragStart = (e) => {
+  const handleDragStart = (e: any) => {
     const id = e.target.id();
     setPieces(
       pieces.map((piece) => {
@@ -80,7 +89,7 @@ const JigsawPuzzle = ({ onSolve, isOpen, onClose }: JigsawPuzzleProps) => {
     );
   };
 
-  const handleDragEnd = (e) => {
+  const handleDragEnd = (e: any) => {
     const id = e.target.id();
     setPieces(
       pieces.map((piece) => {
@@ -138,7 +147,7 @@ const JigsawPuzzle = ({ onSolve, isOpen, onClose }: JigsawPuzzleProps) => {
     <div style={containerStyle}>
       <Stage width={width} height={height} ref={stageRef}>
         <Layer>
-          {pieces.map((piece, index) => (
+          {pieces.map((piece) => (
             <Rect
               key={piece.id}
               id={piece.id}
