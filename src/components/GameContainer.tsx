@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import ClickerButton from './ClickerButton';
 import UpgradeShop from './UpgradeShop';
@@ -811,3 +812,113 @@ const GameContainer = () => {
       </div>
       
       {/* Main content with modified grid to give more space to upgrades */}
+      <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
+        {/* Left column */}
+        <div className="md:col-span-4 lg:col-span-3 space-y-4">
+          {/* Clicker button */}
+          <div className="bg-white rounded-lg p-4 shadow-md">
+            <ClickerButton onClick={handleGameClick} isSurgeMode={surgeMode} />
+          </div>
+          
+          {/* Stats section */}
+          <div className="bg-white rounded-lg p-4 shadow-md">
+            <h2 className="font-bold text-lg mb-2 text-gray-700">Stats</h2>
+            <Stats 
+              pointsPerClick={gameState.clickValueBoost} 
+              pointsPerSecond={gameState.passiveBoost} 
+              surgeModeChance={gameState.surgeModeChance}
+              upgrades={gameState.upgrades} 
+              pets={gameState.pets}
+              surgeMode={surgeMode}
+              surgeModeTimeLeft={surgeModeTimeLeft}
+            />
+          </div>
+          
+          {/* Stats Breakdown */}
+          <StatsBreakdown baseStats={rawStats} gameState={gameState} />
+        </div>
+        
+        {/* Right column */}
+        <div className="md:col-span-8 lg:col-span-9 space-y-4">
+          <div className="bg-white rounded-lg p-4 shadow-md">
+            <UpgradeShop 
+              upgrades={gameState.upgrades}
+              points={gameState.points}
+              onPurchase={purchaseUpgrade}
+              calculateCost={calculateUpgradeCost}
+            />
+          </div>
+        </div>
+      </div>
+      
+      {/* Achievement sidebar */}
+      <AchievementsSidebar 
+        isOpen={isSidebarOpen} 
+        onClose={() => setIsSidebarOpen(false)}
+        achievements={localAchievements}
+      />
+      
+      {/* Bonus mole */}
+      {showBonus && (
+        <div
+          style={getBonusStyles()}
+          onClick={handleBonusClick}
+        >
+          <BonusMole />
+        </div>
+      )}
+      
+      {/* Star for nonogram game */}
+      {showStar && (
+        <div 
+          style={getStarStyles()}
+          onClick={handleStarClick}
+        >
+          <Star size={40} />
+        </div>
+      )}
+      
+      {/* Puzzle icon for jigsaw game */}
+      {showPuzzleIcon && (
+        <div 
+          style={getPuzzleStyles()}
+          onClick={handlePuzzleClick}
+        >
+          <Puzzle size={40} />
+        </div>
+      )}
+      
+      {/* Nonogram game dialog */}
+      <Dialog open={isNonogramOpen} onOpenChange={setIsNonogramOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Nonogram Puzzle</DialogTitle>
+            <DialogDescription>
+              Solve the puzzle to earn points!
+            </DialogDescription>
+          </DialogHeader>
+          <NonogramGame 
+            onSolve={handleNonogramSolve} 
+          />
+        </DialogContent>
+      </Dialog>
+      
+      {/* Jigsaw puzzle dialog */}
+      <Dialog open={isJigsawOpen} onOpenChange={setIsJigsawOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Jigsaw Puzzle</DialogTitle>
+            <DialogDescription>
+              Solve the puzzle to earn points!
+            </DialogDescription>
+          </DialogHeader>
+          <JigsawPuzzle 
+            onSolve={handleJigsawSolve} 
+          />
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+};
+
+export default GameContainer;
