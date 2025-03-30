@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import ClickerButton from './ClickerButton';
 import UpgradeShop from './UpgradeShop';
@@ -8,7 +7,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { RefreshCw, Trophy, Zap, Save, Volume2, VolumeX, Star, Puzzle, Users } from 'lucide-react';
+import { RefreshCw, Trophy, Volume2, VolumeX, Star, Puzzle, Users } from 'lucide-react';
 import AchievementsSidebar from './AchievementsSidebar';
 import { achievements } from '@/lib/achievements';
 import { toast } from "@/hooks/use-toast";
@@ -17,8 +16,8 @@ import usePetsSystem from '@/hooks/usePetsSystem';
 import useSoundSettings from '@/hooks/useSoundSettings';
 import NonogramGame from './NonogramGame';
 import JigsawPuzzle from './JigsawPuzzle';
-import Games from './Games';
-import LevelProgress from './LevelProgress';
+import DayProgress from './LevelProgress';
+import EventRecap from './EventRecap';
 import { formatNumber } from '@/lib/gameUtils';
 
 // Generate placeholder users for the steamgifts list
@@ -38,6 +37,7 @@ const KONAMI_CODE = [
 ];
 
 const GameContainer = () => {
+  
   const { gameState, handleClick, purchaseUpgrade, purchasePet, calculateUpgradeCost, resetGame, getSurgeTime, saveGameState, updateGameUnlocks } = useGameState();
   const [mounted, setMounted] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -695,7 +695,7 @@ const GameContainer = () => {
   return (
     <div className="container mx-auto px-4 py-3 relative overflow-hidden">
       {/* Header with game stats */}
-      <div className="bg-[#2f3540] rounded-md shadow-md flex items-center justify-between px-4 py-3 mb-4 text-[#acb1b9]">
+      <div style={{ backgroundImage: 'linear-gradient(#515763 0%, #2f3540 100%)' }} className="rounded-md shadow-md flex items-center justify-between px-4 py-3 mb-4 text-[#acb1b9]">
         <div className="flex items-center gap-6">
           <h1 className="text-2xl font-bold text-[#acb1b9] tracking-tight">
             {formatNumber(gameState.points)}P
@@ -708,7 +708,7 @@ const GameContainer = () => {
         
         <div className="flex items-center gap-4">
           <div className="bg-[#434a5a] rounded-md px-3 py-1">
-            <span className="text-sm font-medium">Level {gameState.level}</span>
+            <span className="text-sm font-medium">Day {gameState.day}</span>
           </div>
           
           {/* Reset, Achievements, SteamGifts Users, and Sound toggle buttons */}
@@ -794,123 +794,15 @@ const GameContainer = () => {
         </div>
       </div>
       
+      {/* Event Recap section */}
+      <div className="mb-4">
+        <EventRecap day={gameState.day} username="" />
+      </div>
+      
       {/* Main content */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {/* Left column - Clicker */}
-        <div className="md:col-span-1 space-y-4">
+        <div className="md:col-span-2 space-y-4">
           {/* Clicker panel */}
           <div className="rounded-md overflow-hidden shadow-md" style={{ backgroundImage: 'linear-gradient(#515763 0%, #2f3540 100%)' }}>
-            <div className="p-4 flex flex-col items-center justify-center">
-              <h2 className="text-xl font-semibold text-[#acb1b9] mb-4">
-                SG Clicker: a small grind to get them giveaways!
-              </h2>
-              <ClickerButton 
-                onClick={handleGameClick}
-                pointsPerClick={gameState.pointsPerClick * (surgeMode ? 2 : 1)}
-                surgeMode={surgeMode}
-                playSound={soundEnabled}
-              />
-              
-              {/* Level progress bar */}
-              <LevelProgress 
-                level={gameState.level}
-                xp={gameState.xp}
-                xpToNextLevel={gameState.xpToNextLevel}
-              />
-            </div>
-            
-            {/* Stats shown below the clicker */}
-            <Stats 
-              points={gameState.points}
-              pointsPerClick={gameState.pointsPerClick * (surgeMode ? 2 : 1)}
-              pointsPerSecond={gameState.pointsPerSecond * (surgeMode ? 2 : 1)}
-              totalClicks={gameState.totalClicks}
-              totalPoints={gameState.totalPoints}
-              rawPointsPerClick={rawStats.pointsPerClick * (surgeMode ? 2 : 1)}
-              rawPointsPerSecond={rawStats.pointsPerSecond * (surgeMode ? 2 : 1)}
-              pointsMultiplier={gameState.pointsMultiplier}
-              surgeTimeBonus={gameState.surgeTimeBonus}
-              clickValueBoost={calculatePetBonuses(gameState.pets).clickValueBoost}
-              passiveBoost={calculatePetBonuses(gameState.pets).passiveBoost}
-              surgeModeChance={calculatePetBonuses(gameState.pets).surgeModeChance}
-              surgeMode={surgeMode}
-              level={gameState.level}
-            />
-          </div>
-        </div>
-        
-        {/* Right column - Games */}
-        <div className="md:col-span-2">
-          <Games games={gameState.games} userLevel={gameState.level} />
-        </div>
-      </div>
-      
-      {/* Bottom row - Upgrades panel to span the full width */}
-      <div className="mt-4">
-        <UpgradeShop 
-          gameState={gameState}
-          onPurchase={purchaseUpgrade}
-          onPetPurchase={purchasePet}
-          calculateUpgradeCost={calculateUpgradeCost}
-        />
-      </div>
-      
-      {/* Bonus elements */}
-      {showBonus && (
-        <div 
-          onClick={handleBonusClick}
-          style={getBonusStyles() as React.CSSProperties}
-        >
-          <img 
-            src="https://dejpknyizje2n.cloudfront.net/media/carstickers/versions/mole-pixel-sticker-ud740-811c-x450.png" 
-            alt="Bonus" 
-            className="w-full h-full object-contain"
-          />
-        </div>
-      )}
-      
-      {/* Star bonus for nonogram game */}
-      {showStar && (
-        <div 
-          onClick={handleStarClick}
-          style={getStarStyles() as React.CSSProperties}
-        >
-          <Star size={40} />
-        </div>
-      )}
-      
-      {/* Puzzle bonus for jigsaw game */}
-      {showPuzzleIcon && (
-        <div 
-          onClick={handlePuzzleClick}
-          style={getPuzzleStyles() as React.CSSProperties}
-        >
-          <Puzzle size={40} />
-        </div>
-      )}
-      
-      {/* Nonogram game popup */}
-      <NonogramGame 
-        isOpen={isNonogramOpen}
-        onClose={() => setIsNonogramOpen(false)}
-        onSolve={handleNonogramSolve}
-      />
-      
-      {/* Jigsaw puzzle popup */}
-      <JigsawPuzzle 
-        isOpen={isJigsawOpen}
-        onClose={() => setIsJigsawOpen(false)}
-        onSolve={handleJigsawSolve}
-      />
-      
-      {/* Achievements sidebar */}
-      <AchievementsSidebar 
-        achievements={localAchievements}
-        isOpen={isSidebarOpen} 
-        onClose={() => setIsSidebarOpen(false)}
-      />
-    </div>
-  );
-};
-
-export default GameContainer;
+            <div className="p-

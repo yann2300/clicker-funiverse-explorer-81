@@ -3,28 +3,64 @@ import { toast } from "@/hooks/use-toast";
 import { GameState, Upgrade, Pet } from '@/types/gameState';
 import usePetsSystem, { initialPets } from './usePetsSystem';
 import useUpgradesSystem, { initialUpgrades } from './useUpgradesSystem';
-import { initialGames } from '@/lib/games';
 
-// Calculate XP needed for next level based on current level
-const calculateXpForLevel = (level: number): number => {
-  return Math.floor(10000 * Math.pow(1.07, level - 1));
-};
+// Define day thresholds
+const DAY_THRESHOLDS = [
+  0,        // Day 1 - initial state
+  100,      // Day 2
+  500,      // Day 3
+  1000,     // Day 4
+  5000,     // Day 5
+  10000,    // Day 6
+  30000,    // Day 7
+  40000,    // Day 8
+  50000,    // Day 9
+  65000,    // Day 10
+  80000,    // Day 11
+  100000,   // Day 12
+  120000,   // Day 13
+  130000,   // Day 14
+  150000,   // Day 15
+  180000,   // Day 16
+  230000,   // Day 17
+  280000,   // Day 18
+  310000,   // Day 19
+  350000,   // Day 20
+  400000,   // Day 21
+  420000,   // Day 22
+  480000,   // Day 23
+  520000,   // Day 24
+  570000,   // Day 25
+  620000,   // Day 26
+  680000,   // Day 27
+  750000,   // Day 28
+  830000,   // Day 29
+  900000,   // Day 30
+  1000000,  // Day 31
+  Infinity  // Beyond day 31
+];
 
-// Calculate level based on total points
-const calculateLevelFromXp = (totalPoints: number): { level: number; xp: number; xpToNextLevel: number } => {
-  // We'll base levels on total points, with level 100 at 1 billion points
-  const pointsPerLevel = 1000000000 / 100; // 10 million points per level
+// Calculate day based on total points
+const calculateDayFromPoints = (totalPoints: number): { day: number; dayProgress: number; pointsToNextDay: number } => {
+  // Find the current day based on points
+  let day = 1;
+  for (let i = 1; i < DAY_THRESHOLDS.length; i++) {
+    if (totalPoints >= DAY_THRESHOLDS[i-1] && totalPoints < DAY_THRESHOLDS[i]) {
+      day = i;
+      break;
+    }
+  }
   
-  let level = Math.min(100, Math.floor(totalPoints / pointsPerLevel) + 1);
-  // Ensure level is at least 1
-  level = Math.max(1, level);
+  // Ensure day is at least 1 and at most 31
+  day = Math.max(1, Math.min(31, day));
   
-  // Calculate progress within the current level
-  const levelStartPoints = (level - 1) * pointsPerLevel;
-  const xp = totalPoints - levelStartPoints;
-  const xpToNextLevel = level < 100 ? pointsPerLevel : 1; // At level 100, just show 1 to avoid division by zero
+  // Calculate progress within the current day
+  const dayStartPoints = DAY_THRESHOLDS[day-1];
+  const nextDayPoints = DAY_THRESHOLDS[day];
+  const dayProgress = totalPoints - dayStartPoints;
+  const pointsToNextDay = nextDayPoints - dayStartPoints;
   
-  return { level, xp, xpToNextLevel };
+  return { day, dayProgress, pointsToNextDay };
 };
 
 // Initial game state
@@ -39,10 +75,9 @@ const initialGameState: GameState = {
   lastSaved: new Date(),
   surgeTimeBonus: 0,
   pointsMultiplier: 1.0,
-  level: 1,
-  xp: 0,
-  xpToNextLevel: 10000000, // Updated for new leveling system
-  games: initialGames
+  day: 1,
+  dayProgress: 0,
+  pointsToNextDay: DAY_THRESHOLDS[1], // Points needed to go from day 1 to day 2
 };
 
 // Hook to manage game state
@@ -71,16 +106,30 @@ export const useGameState = () => {
           parsed.pointsMultiplier = 1.0;
         }
         
-        // Add level system if not present
-        if (parsed.level === undefined) {
-          parsed.level = 1;
-          parsed.xp = 0;
-          parsed.xpToNextLevel = calculateXpForLevel(1);
+        // Convert old level system to day system if needed
+        if (parsed.level !== undefined && parsed.day === undefined) {
+          const dayInfo = calculateDayFromPoints(parsed.totalPoints);
+          parsed.day = dayInfo.day;
+          parsed.dayProgress = dayInfo.dayProgress;
+          parsed.pointsToNextDay = dayInfo.pointsToNextDay;
+          
+          // Remove old level properties
+          delete parsed.level;
+          delete parsed.xp;
+          delete parsed.xpToNextLevel;
         }
         
-        // Add games if not present
-        if (!parsed.games) {
-          parsed.games = initialGames;
+        // Add day system if not present
+        if (parsed.day === undefined) {
+          const dayInfo = calculateDayFromPoints(parsed.totalPoints);
+          parsed.day = dayInfo.day;
+          parsed.dayProgress = dayInfo.dayProgress;
+          parsed.pointsToNextDay = dayInfo.pointsToNextDay;
+        }
+        
+        // Remove games property as it's no longer used
+        if (parsed.games) {
+          delete parsed.games;
         }
         
         return parsed;
@@ -115,42 +164,24 @@ export const useGameState = () => {
     setGameState(prev => {
       const newTotalPoints = prev.totalPoints + amount;
       
-      // Calculate level based on total points
-      const levelInfo = calculateLevelFromXp(newTotalPoints);
+      // Calculate day based on total points
+      const dayInfo = calculateDayFromPoints(newTotalPoints);
       
-      // Check for level up
-      if (levelInfo.level > prev.level) {
-        // Show toast message for level up
+      // Check for day change
+      if (dayInfo.day > prev.day) {
+        // Show toast message for day advancement
         toast({
-          title: `Level Up!`,
-          description: `You are now level ${levelInfo.level}!`
-        });
-        
-        // Check if any games got unlocked
-        const updatedGames = prev.games.map(game => {
-          if (!game.isUnlocked && 
-              game.unlockCondition.type === 'level' && 
-              typeof game.unlockCondition.value === 'number' &&
-              levelInfo.level >= game.unlockCondition.value) {
-            
-            toast({
-              title: `New Game Unlocked!`,
-              description: `${game.name} is now available!`
-            });
-            
-            return { ...game, isUnlocked: true };
-          }
-          return game;
+          title: `Advanced to Day ${dayInfo.day}!`,
+          description: `You've reached ${DAY_THRESHOLDS[dayInfo.day-1]} points!`
         });
         
         return {
           ...prev,
           points: prev.points + amount,
           totalPoints: newTotalPoints,
-          level: levelInfo.level,
-          xp: levelInfo.xp,
-          xpToNextLevel: levelInfo.xpToNextLevel,
-          games: updatedGames
+          day: dayInfo.day,
+          dayProgress: dayInfo.dayProgress,
+          pointsToNextDay: dayInfo.pointsToNextDay
         };
       }
       
@@ -158,13 +189,11 @@ export const useGameState = () => {
         ...prev,
         points: prev.points + amount,
         totalPoints: newTotalPoints,
-        xp: levelInfo.xp,
-        xpToNextLevel: levelInfo.xpToNextLevel
+        dayProgress: dayInfo.dayProgress
       };
     });
   }, []);
   
-  // Handle clicking the main button, with an optional multiplier for SURGE MODE
   const handleClick = useCallback((multiplier = 1) => {
     setGameState(prev => {
       // Calculate bonuses from pets
@@ -198,7 +227,6 @@ export const useGameState = () => {
     addPoints(pointsEarned);
   }, [calculatePetBonuses, addPoints, gameState.pointsPerClick, gameState.pets]);
   
-  // Purchase an upgrade
   const purchaseUpgrade = useCallback((upgradeId: string) => {
     setGameState(prev => {
       const upgradeIndex = prev.upgrades.findIndex(u => u.id === upgradeId);
@@ -242,6 +270,10 @@ export const useGameState = () => {
       // Recalculate pet bonuses after buying the upgrade
       const petBonuses = calculatePetBonuses(updatedPets);
       
+      // Calculate day info in case total points change affects it
+      const newTotalPoints = prev.totalPoints; // Total points don't change from upgrade
+      const dayInfo = calculateDayFromPoints(newTotalPoints);
+      
       const newState = {
         ...prev,
         points: prev.points - cost,
@@ -251,6 +283,9 @@ export const useGameState = () => {
         surgeTimeBonus: petBonuses.surgeTimeBonus,
         upgrades: newUpgrades,
         pets: updatedPets,
+        day: dayInfo.day,
+        dayProgress: dayInfo.dayProgress,
+        pointsToNextDay: dayInfo.pointsToNextDay,
         lastSaved: new Date(),
       };
       
@@ -261,7 +296,6 @@ export const useGameState = () => {
     });
   }, [calculateUpgradeCost, updateUnlockedPets, calculateNewClickValue, calculatePetBonuses]);
   
-  // Purchase a pet
   const purchasePet = useCallback((petId: string) => {
     setGameState(prev => {
       const petIndex = prev.pets.findIndex(p => p.id === petId);
@@ -290,6 +324,10 @@ export const useGameState = () => {
       // Fix: Recalculate pointsPerClick with pet bonuses
       const newPointsPerClick = calculateNewClickValue(1, prev.upgrades);
       
+      // Calculate day info in case total points change affects it
+      const newTotalPoints = prev.totalPoints; // Total points don't change from pet purchase
+      const dayInfo = calculateDayFromPoints(newTotalPoints);
+      
       const newState = {
         ...prev,
         points: prev.points - pet.cost,
@@ -297,6 +335,9 @@ export const useGameState = () => {
         pointsPerClick: newPointsPerClick,
         pointsMultiplier: petBonuses.pointsMultiplier,
         surgeTimeBonus: petBonuses.surgeTimeBonus,
+        day: dayInfo.day,
+        dayProgress: dayInfo.dayProgress,
+        pointsToNextDay: dayInfo.pointsToNextDay,
         lastSaved: new Date(),
       };
       
@@ -306,32 +347,22 @@ export const useGameState = () => {
       return newState;
     });
   }, [calculatePetBonuses, calculateNewClickValue]);
-  
-  // Update game unlock state based on achievements
-  const updateGameUnlocks = useCallback((unlockedAchievements: Set<string>) => {
-    setGameState(prev => {
-      const updatedGames = prev.games.map(game => {
-        if (!game.isUnlocked && 
-            game.unlockCondition.type === 'achievement' && 
-            typeof game.unlockCondition.value === 'string' &&
-            unlockedAchievements.has(game.unlockCondition.value)) {
-          
-          toast({
-            title: `New Game Unlocked!`,
-            description: `${game.name} is now available!`
-          });
-          
-          return { ...game, isUnlocked: true };
-        }
-        return game;
-      });
-      
-      return {
-        ...prev,
-        games: updatedGames
-      };
+
+  // Reset game state
+  const resetGame = useCallback(() => {
+    localStorage.removeItem('clickerGameState');
+    localStorage.removeItem('clickerGameAchievements'); // Also clear achievements
+    setGameState({ ...initialGameState });
+    toast({
+      title: "Game Reset",
+      description: "Game has been reset successfully"
     });
   }, []);
+  
+  // Get surge time including pet bonuses
+  const getSurgeTime = useCallback(() => {
+    return 10 + gameState.surgeTimeBonus; // Base 10 seconds + pet bonuses
+  }, [gameState.surgeTimeBonus]);
   
   // Passive income generation with pet bonuses
   useEffect(() => {
@@ -357,21 +388,7 @@ export const useGameState = () => {
     return () => clearInterval(saveTimer);
   }, [saveGameState]);
   
-  // Reset game state
-  const resetGame = useCallback(() => {
-    localStorage.removeItem('clickerGameState');
-    localStorage.removeItem('clickerGameAchievements'); // Also clear achievements
-    setGameState({ ...initialGameState });
-    toast({
-      title: "Game Reset",
-      description: "Game has been reset successfully"
-    });
-  }, []);
-  
-  // Get surge time including pet bonuses
-  const getSurgeTime = useCallback(() => {
-    return 10 + gameState.surgeTimeBonus; // Base 10 seconds + pet bonuses
-  }, [gameState.surgeTimeBonus]);
+  const updateGameUnlocks = useCallback(() => {}, []);
   
   return {
     gameState,

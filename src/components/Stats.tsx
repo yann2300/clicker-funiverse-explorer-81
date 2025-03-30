@@ -25,7 +25,7 @@ interface StatsProps {
   passiveBoost: number;
   surgeModeChance: number;
   surgeMode?: boolean;
-  level: number;
+  level: number; // We'll keep the prop name as level but use it as day
 }
 
 const Stats: React.FC<StatsProps> = ({
@@ -42,10 +42,10 @@ const Stats: React.FC<StatsProps> = ({
   passiveBoost,
   surgeModeChance,
   surgeMode = false,
-  level
+  level // This is now used as day
 }) => {
   return (
-    <div className="bg-[#2f3540] rounded-b-md px-4 py-3 text-center w-full">
+    <div style={{ backgroundImage: 'linear-gradient(#515763 0%, #2f3540 100%)' }} className="rounded-b-md px-4 py-3 text-center w-full">
       <TooltipProvider>
         <Tooltip>
           <TooltipTrigger asChild>

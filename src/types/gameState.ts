@@ -26,18 +26,10 @@ export interface Pet {
   icon: string;
 }
 
-export interface Game {
-  id: string;
-  name: string;
-  description: string;
-  imageUrl: string;
-  pointsCost: number;
-  unlockCondition: {
-    type: 'level' | 'achievement';
-    value: number | string; // Level number or achievement ID
-  };
-  link: string;
-  isUnlocked: boolean;
+export interface DayUser {
+  day: number;
+  username: string;
+  profileUrl: string;
 }
 
 export interface GameState {
@@ -52,9 +44,8 @@ export interface GameState {
   // Additional properties for bonuses
   surgeTimeBonus: number;
   pointsMultiplier: number;
-  // New level system
-  level: number;
-  xp: number;
-  xpToNextLevel: number;
-  games: Game[];
+  // Day system (replacing level system)
+  day: number;
+  dayProgress: number;
+  pointsToNextDay: number;
 }
